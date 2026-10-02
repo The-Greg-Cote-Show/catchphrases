@@ -15,9 +15,7 @@ database_id = "050d31bd-8dd7-4927-a436-510919e9793e"
 # Sites allowed to call the voting API (comma separated, no trailing slash).
 ALLOWED_ORIGINS = "https://catchphrases.thegregcoteshow.com,https://the-greg-cote-show.github.io"
 # Where index.html, results.html and catchphrases.json live (no trailing slash).
-# Using the github.io address until the catchphrases.thegregcoteshow.com DNS record exists.
-# Switch to "https://catchphrases.thegregcoteshow.com" once it does.
-SITE_URL = "https://the-greg-cote-show.github.io/catchphrases"
+SITE_URL = "https://catchphrases.thegregcoteshow.com"
 # Most votes per exercise from one connection (shared Wi-Fi, office, carrier NAT).
 # Each device still gets one vote per exercise. Raise this if real fans get blocked.
 MAX_PER_CONNECTION = "10"
