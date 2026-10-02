@@ -86,16 +86,11 @@ main { flex: 1; padding-bottom: 24px; }
 .pick[aria-pressed="true"] .tick::after { content: "\2713"; }
 .no-match { color: var(--ink-3); padding: 12px 4px; }
 
-/* Top 10 ranking: two columns (Greg's rank + phrase | your rank) in the old one-column width */
-.rank-head { display: grid; grid-template-columns: 1fr 96px; gap: 10px; padding: 0 8px 4px 12px; color: var(--ink-3); font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
-.rank-head span:last-child { text-align: center; }
-.rank-row { display: grid; grid-template-columns: 1fr 96px; gap: 10px; align-items: center; background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: 8px 8px 8px 12px; margin: 0 0 8px; min-height: 58px; }
-.rank-row .greg { display: block; font-size: 15px; font-weight: 700; color: var(--ink-3); }
-.rank-row .txt { display: block; overflow-wrap: anywhere; }
-.rank-row select { width: 96px; height: 48px; border-radius: 8px; border: 2px solid var(--line); background: var(--surface-2); color: var(--ink); font-size: 20px; font-weight: 800; text-align: center; text-align-last: center; padding: 0 4px; cursor: pointer; }
-.rank-row select:focus { outline: none; border-color: var(--brand); }
-.rank-row.ranked { border-color: var(--brand); background: var(--tint); }
-.rank-row.ranked select { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+/* Biggest Omissions: five one-line boxes */
+.om-boxes { display: grid; gap: 10px; margin: 6px 0 4px; }
+.om-box { width: 100%; font: inherit; font-size: 19px; padding: 12px; border-radius: 10px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); }
+.om-box:focus { outline: none; border-color: var(--brand); }
+.om-box::placeholder { color: var(--ink-3); }
 
 .toolbar { display: flex; gap: 8px; margin: 4px 0 10px; flex-wrap: wrap; }
 .row { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: 6px 6px 6px 8px; margin: 0 0 6px; min-height: 54px; }
@@ -134,7 +129,7 @@ main { flex: 1; padding-bottom: 24px; }
 
 @media (min-width: 600px) {
   h1 { font-size: 46px; }
-  .cards { grid-template-columns: 1fr 1fr 1fr; }
+  .cards { grid-template-columns: 1fr 1fr; }
   .card-sub { padding-right: 0; margin-top: 6px; }
   .chip { position: static; display: inline-block; margin-top: 10px; }
 }
@@ -154,11 +149,11 @@ main { flex: 1; padding-bottom: 24px; }
 <main class="wrap">
   <!-- HOME -->
   <section id="view-home" class="view">
-    <p class="lede">Greg counted down his Top 75. Now you get a say. Do one, two, or all three.</p>
+    <p class="lede">Greg counted down his Top 75. Now you get a say. Do one or do them all.</p>
     <div class="cards">
       <a class="card" href="#top10">
         <span class="card-title">Your Top 10</span>
-        <span class="card-sub">Rank your 10 favorites, 1 through 10.</span>
+        <span class="card-sub">Pick your 10 favorites, in no particular order.</span>
         <span class="chip" data-chip="top10">Not yet</span>
       </a>
       <a class="card" href="#number1">
@@ -171,6 +166,11 @@ main { flex: 1; padding-bottom: 24px; }
         <span class="card-sub">Start with Greg's order and fix what he got wrong.</span>
         <span class="chip" data-chip="rearrange">Not yet</span>
       </a>
+      <a class="card" href="#omissions">
+        <span class="card-title">Biggest Omissions</span>
+        <span class="card-sub">The great ones Greg left off. Name up to 5.</span>
+        <span class="chip" data-chip="omissions">Not yet</span>
+      </a>
     </div>
     <p class="results-link">Results go up on the <a href="results.html">results page</a> once we've crunched the numbers.</p>
   </section>
@@ -179,12 +179,11 @@ main { flex: 1; padding-bottom: 24px; }
   <section id="view-top10" class="view" hidden>
     <a class="back" href="#">&larr; Back to home</a>
     <h2>Your Top 10</h2>
-    <p class="help">Find your 10 favorites and give each one a number. 1 is the best. Each number can only go to one catchphrase.</p>
+    <p class="help">Tap your 10 favorites, in no particular order. No ranking needed, just pick 10.</p>
     <div class="searchbar">
       <input type="search" id="search-top10" placeholder="Search the 75" aria-label="Search catchphrases" autocomplete="off">
-      <button type="button" class="linkish" id="clear-top10">Clear ranks</button>
+      <button type="button" class="linkish" id="clear-top10">Clear picks</button>
     </div>
-    <div class="rank-head" aria-hidden="true"><span>Greg's rank</span><span>Your rank</span></div>
     <ul class="pick-list" id="list-top10"></ul>
     <p class="no-match" id="nomatch-top10" hidden>Nothing matches that.</p>
     <div class="actionbar">
@@ -221,6 +220,24 @@ main { flex: 1; padding-bottom: 24px; }
     <div class="actionbar">
       <span class="pickname">Your #1 is at the bottom.</span>
       <button type="button" class="btn primary" id="review-rearrange">Review my order</button>
+    </div>
+  </section>
+
+  <!-- BIGGEST OMISSIONS -->
+  <section id="view-omissions" class="view" hidden>
+    <a class="back" href="#">&larr; Back to home</a>
+    <h2>Biggest Omissions</h2>
+    <p class="help">What great Greg catchphrases didn't make his Top 75? Name up to 5, one per box. Spelling doesn't have to be perfect.</p>
+    <div class="om-boxes">
+      <input type="text" class="om-box" maxlength="80" autocomplete="off" enterkeyhint="next" placeholder="Omission 1" aria-label="Omission 1">
+      <input type="text" class="om-box" maxlength="80" autocomplete="off" enterkeyhint="next" placeholder="Omission 2" aria-label="Omission 2">
+      <input type="text" class="om-box" maxlength="80" autocomplete="off" enterkeyhint="next" placeholder="Omission 3" aria-label="Omission 3">
+      <input type="text" class="om-box" maxlength="80" autocomplete="off" enterkeyhint="next" placeholder="Omission 4" aria-label="Omission 4">
+      <input type="text" class="om-box" maxlength="80" autocomplete="off" enterkeyhint="done" placeholder="Omission 5" aria-label="Omission 5">
+    </div>
+    <div class="actionbar">
+      <span class="counter" id="count-omissions" aria-live="polite">0 of 5</span>
+      <button type="button" class="btn primary" id="review-omissions" disabled>Review</button>
     </div>
   </section>
 
@@ -265,8 +282,10 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   var EX = {
     top10: { name: 'Your Top 10', short: 'Top 10' },
     number1: { name: 'Your Number 1', short: 'Number 1' },
-    rearrange: { name: 'Redo the Countdown', short: 'Redo the Countdown' }
+    rearrange: { name: 'Redo the Countdown', short: 'Redo the Countdown' },
+    omissions: { name: 'Biggest Omissions', short: 'Biggest Omissions' }
   };
+  var OM_BOXES = 5;
   var DRAFT_KEY = 'gcs75-draft-v1';
   var DONE_KEY = 'gcs75-done-v1';
   var DEVICE_KEY = 'gcs75-device-v1';
@@ -276,9 +295,10 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   var status = null;         // from /api/status
   var done = loadLocal(DONE_KEY) || {};
   var draft = loadLocal(DRAFT_KEY) || {};
-  var ranks = cleanRanks(draft.top10r);   // { id: 1..10 } for the ranked Top 10
-  var device = deviceId();
+  var top10 = new Set(Array.isArray(draft.top10) ? draft.top10.filter(function (x) { return typeof x === 'number'; }) : []);
   var number1 = typeof draft.number1 === 'number' ? draft.number1 : null;
+  var omissions = Array.isArray(draft.omissions) ? draft.omissions.slice(0, OM_BOXES).map(function (x) { return typeof x === 'string' ? x : ''; }) : [];
+  var device = deviceId();
   var confirmEx = null;
   var widgetId = null;
   var token = null;
@@ -300,32 +320,23 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     saveLocal(DEVICE_KEY, d);
     return d;
   }
-  // Keeps only valid { id: rank } pairs with each rank 1..10 used once.
-  function cleanRanks(obj) {
-    var out = {}, used = {};
-    if (!obj || typeof obj !== 'object') return out;
-    Object.keys(obj).forEach(function (k) {
-      var r = Number(obj[k]), id = Number(k);
-      if (id >= 1 && id <= 75 && r >= 1 && r <= 10 && Math.floor(r) === r && !used[r]) { out[id] = r; used[r] = 1; }
-    });
-    return out;
-  }
   function saveDraft() {
-    draft.top10r = ranks;
+    draft.top10 = Array.from(top10);
     draft.number1 = number1;
     draft.rearrange = currentOrder();
+    draft.omissions = omissions;
     saveLocal(DRAFT_KEY, draft);
   }
   function norm(s) { return String(s).toLowerCase().replace(/[^a-z0-9 ]+/g, '').replace(/\s+/g, ' ').trim(); }
   function showBanner(text) { var b = $('banner'); b.textContent = text; b.hidden = !text; }
 
-  // ---------- lists ----------
+  // ---------- pick lists (Top 10 and Number 1) ----------
   function buildPickList(ex) {
     var ul = $('list-' + ex);
     ul.textContent = '';
     phrases.forEach(function (p) {
       var li = document.createElement('li');
-      li.dataset.search = norm(p.text) + ' ' + p.id;
+      li.dataset.search = norm(p.text) + ' ' + norm(p.text).replace(/ /g, '') + ' ' + p.id;
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'pick';
@@ -342,94 +353,50 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
       var b = e.target.closest('.pick');
       if (!b) return;
       var id = Number(b.dataset.id);
-      pickNumber1(id);
+      if (ex === 'top10') toggleTop10(id); else pickNumber1(id);
     });
     var search = $('search-' + ex);
     search.addEventListener('input', function () { filterList(ex, search.value); });
   }
 
   function filterList(ex, q) {
-    var n = norm(q), shown = 0;
+    var n = norm(q), squashed = n.replace(/ /g, ''), shown = 0;
     var items = $('list-' + ex).children;
     for (var i = 0; i < items.length; i++) {
-      var hit = !n || items[i].dataset.search.indexOf(n) >= 0;
+      var hay = items[i].dataset.search;
+      var hit = !n || hay.indexOf(n) >= 0 || hay.indexOf(squashed) >= 0;
       items[i].hidden = !hit;
       if (hit) shown++;
     }
     $('nomatch-' + ex).hidden = shown > 0;
   }
 
-  // ---------- top 10 (ranked) ----------
-  // ranks: { catchphraseId: 1..10 }. A number can only belong to one catchphrase:
-  // numbers already used elsewhere are disabled in every other dropdown.
-  function buildRankList() {
-    var ul = $('list-top10');
-    ul.textContent = '';
-    phrases.forEach(function (p) {
-      var li = document.createElement('li');
-      li.className = 'rank-row';
-      li.dataset.search = norm(p.text) + ' ' + p.id;
-      li.dataset.id = p.id;
-      var who = document.createElement('label');
-      who.setAttribute('for', 'rank-' + p.id);
-      var greg = document.createElement('span'); greg.className = 'greg'; greg.textContent = "Greg's #" + p.id;
-      var txt = document.createElement('span'); txt.className = 'txt'; txt.textContent = p.text;
-      who.appendChild(greg); who.appendChild(txt);
-      var sel = document.createElement('select');
-      sel.id = 'rank-' + p.id;
-      sel.dataset.id = p.id;
-      sel.setAttribute('aria-label', 'Your rank for ' + p.text);
-      var none = document.createElement('option'); none.value = ''; none.textContent = 'Rank'; sel.appendChild(none);
-      for (var r = 1; r <= 10; r++) { var o = document.createElement('option'); o.value = String(r); o.textContent = String(r); sel.appendChild(o); }
-      li.appendChild(who); li.appendChild(sel);
-      ul.appendChild(li);
-    });
-    ul.addEventListener('change', function (e) {
-      var sel = e.target.closest('select');
-      if (!sel) return;
-      var id = Number(sel.dataset.id), v = sel.value ? Number(sel.value) : null;
-      var owner = v ? rankOwner(v) : null;
-      if (owner && owner !== id) { paintTop10(); return; } // taken: refuse (dropdowns normally block this)
-      if (v) ranks[id] = v; else delete ranks[id];
-      saveDraft();
-      paintTop10();
-    });
-    var search = $('search-top10');
-    search.addEventListener('input', function () { filterList('top10', search.value); });
+  // ---------- top 10 (10 picks, no particular order) ----------
+  function toggleTop10(id) {
+    if (top10.has(id)) top10.delete(id);
+    else if (top10.size >= 10) { flashCounter(); return; }
+    else top10.add(id);
+    saveDraft();
+    paintTop10();
   }
-  function rankOwner(r) {
-    for (var k in ranks) if (ranks[k] === r) return Number(k);
-    return null;
-  }
-  function rankedIds() {
-    var out = [];
-    for (var r = 1; r <= 10; r++) { var id = rankOwner(r); if (id) out.push(id); }
-    return out;
+  function flashCounter() {
+    var c = $('count-top10');
+    c.textContent = "That's 10. Unpick one first.";
+    c.className = 'counter warn';
+    clearTimeout(flashCounter.t);
+    flashCounter.t = setTimeout(paintTop10, 1600);
   }
   function paintTop10() {
-    var owner = {};
-    Object.keys(ranks).forEach(function (k) { owner[ranks[k]] = Number(k); });
-    var rows = $('list-top10').children;
-    for (var i = 0; i < rows.length; i++) {
-      var id = Number(rows[i].dataset.id), mine = ranks[id] || null;
-      var sel = rows[i].querySelector('select');
-      sel.value = mine ? String(mine) : '';
-      for (var j = 1; j < sel.options.length; j++) {
-        var r = j, takenByOther = owner[r] && owner[r] !== id;
-        sel.options[j].disabled = !!takenByOther;
-        sel.options[j].textContent = takenByOther ? r + ' (taken)' : String(r);
-      }
-      rows[i].classList.toggle('ranked', !!mine);
-    }
-    var n = Object.keys(ranks).length;
+    var btns = $('list-top10').querySelectorAll('.pick');
+    for (var i = 0; i < btns.length; i++) btns[i].setAttribute('aria-pressed', top10.has(Number(btns[i].dataset.id)) ? 'true' : 'false');
     var c = $('count-top10');
-    c.textContent = n + ' of 10 ranked';
-    c.className = 'counter' + (n === 10 ? ' full' : '');
-    $('review-top10').disabled = n !== 10;
+    c.textContent = top10.size + ' of 10';
+    c.className = 'counter' + (top10.size === 10 ? ' full' : '');
+    $('review-top10').disabled = top10.size !== 10;
   }
 
+  // ---------- number 1 ----------
   function pickNumber1(id) {
-
     number1 = number1 === id ? null : id;
     saveDraft();
     paintNumber1();
@@ -439,6 +406,42 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     for (var i = 0; i < btns.length; i++) btns[i].setAttribute('aria-pressed', Number(btns[i].dataset.id) === number1 ? 'true' : 'false');
     $('pickname-number1').textContent = number1 ? byId[number1] : 'No pick yet';
     $('review-number1').disabled = !number1;
+  }
+
+  // ---------- biggest omissions (up to 5 typed answers) ----------
+  function cleanedOmissions() {
+    var out = [], seen = {};
+    omissions.forEach(function (s) {
+      var t = String(s || '').replace(/\s+/g, ' ').trim();
+      var k = t.toLowerCase();
+      if (t && !seen[k]) { seen[k] = 1; out.push(t); }
+    });
+    return out;
+  }
+  function initOmissions() {
+    var boxes = document.querySelectorAll('.om-box');
+    Array.prototype.forEach.call(boxes, function (box, i) {
+      box.value = omissions[i] || '';
+      box.addEventListener('input', function () {
+        for (var j = 0; j < OM_BOXES; j++) if (typeof omissions[j] !== 'string') omissions[j] = '';
+        omissions[i] = box.value;
+        saveDraft();
+        paintOmissions();
+      });
+      box.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        if (boxes[i + 1]) boxes[i + 1].focus();
+        else box.blur();
+      });
+    });
+    paintOmissions();
+  }
+  function paintOmissions() {
+    var n = cleanedOmissions().length;
+    $('count-omissions').textContent = n + ' of 5';
+    $('count-omissions').className = 'counter' + (n === OM_BOXES ? ' full' : '');
+    $('review-omissions').disabled = n === 0;
   }
 
   // ---------- rearrange ----------
@@ -540,14 +543,19 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     });
   }
 
-  function idsFor(ex) {
-    if (ex === 'top10') return rankedIds();
+  // What gets sent: catchphrase ids for the first three, typed text for omissions.
+  function itemsFor(ex) {
+    if (ex === 'top10') return Array.from(top10);
     if (ex === 'number1') return number1 ? [number1] : [];
+    if (ex === 'omissions') return cleanedOmissions();
     return currentOrder();
   }
   function ready(ex) {
-    var ids = idsFor(ex);
-    return ex === 'top10' ? ids.length === 10 : ex === 'number1' ? ids.length === 1 : isPermutation(ids);
+    var items = itemsFor(ex);
+    if (ex === 'top10') return items.length === 10;
+    if (ex === 'number1') return items.length === 1;
+    if (ex === 'omissions') return items.length >= 1;
+    return isPermutation(items);
   }
 
   function route() {
@@ -576,13 +584,13 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     $('confirm-back2').href = '#' + ex;
     var ol = $('confirm-list');
     ol.textContent = '';
-    ol.className = 'confirm-list' + (ex === 'rearrange' ? ' long' : '');
-    var ids = idsFor(ex);
+    ol.className = 'confirm-list' + (ex === 'rearrange' ? ' long' : '') + (ex === 'number1' || ex === 'top10' ? ' plain' : '');
+    var items = itemsFor(ex);
+    if (ex === 'top10') items = items.slice().sort(function (a, b) { return a - b; });
     if (ex === 'rearrange') ol.setAttribute('reversed', ''); else ol.removeAttribute('reversed');
-    if (ex === 'number1') ol.classList.add('plain');
-    ids.forEach(function (id) {
+    items.forEach(function (it) {
       var li = document.createElement('li');
-      li.textContent = byId[id];
+      li.textContent = ex === 'omissions' ? it : byId[it];
       ol.appendChild(li);
     });
     $('confirm-msg').textContent = '';
@@ -625,10 +633,12 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     sending = true;
     paintSubmit();
     $('confirm-msg').textContent = '';
+    var body = { exercise: ex, token: token, device: device };
+    if (ex === 'omissions') body.entries = itemsFor(ex); else body.ids = itemsFor(ex);
     fetch(API + '/api/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ exercise: ex, ids: idsFor(ex), token: token, device: device })
+      body: JSON.stringify(body)
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) { return { status: r.status, body: j }; });
     }).then(function (res) {
@@ -640,7 +650,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
       }
       if (res.status === 409) {
         markDone(ex);
-        showDone(ex, res.body.error || 'Looks like a vote from this connection is already in for this one.');
+        showDone(ex, res.body.error || 'Looks like you already voted on this one.');
         return;
       }
       failed(res.body.error || 'Voting is busy, try again later.');
@@ -659,11 +669,17 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   function markDone(ex) {
     done[ex] = true;
     saveLocal(DONE_KEY, done);
-    if (ex === 'top10') ranks = {};
+    if (ex === 'top10') top10.clear();
     if (ex === 'number1') number1 = null;
     if (ex === 'rearrange') delete draft.rearrange;
-    draft.top10r = ranks;
+    if (ex === 'omissions') {
+      omissions = [];
+      Array.prototype.forEach.call(document.querySelectorAll('.om-box'), function (b) { b.value = ''; });
+      paintOmissions();
+    }
+    draft.top10 = Array.from(top10);
     draft.number1 = number1;
+    draft.omissions = omissions;
     saveLocal(DRAFT_KEY, draft);
   }
 
@@ -684,7 +700,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
         if (i < left.length - 1) box.appendChild(document.createTextNode(', '));
       });
     } else {
-      box.textContent = "That's all three. You're a legend.";
+      box.textContent = "You did all four. You're a legend.";
     }
     if (location.hash !== '#done') history.replaceState(null, '', '#done');
     show('done');
@@ -698,7 +714,8 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
       .then(function (s) {
         if (!s || !s.ok) throw new Error('bad status');
         status = s;
-        Object.keys(EX).forEach(function (k) { if (s.done && s.done[k]) done[k] = true; });
+        // The server is the truth. If votes were cleared, this device can vote again.
+        Object.keys(EX).forEach(function (k) { done[k] = !!(s.done && s.done[k]); });
         saveLocal(DONE_KEY, done);
         if (!s.voting_open) showBanner("Voting isn't open right now. You can look around and your picks save on this device.");
         else showBanner('');
@@ -714,18 +731,20 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     .then(function (list) {
       phrases = list.slice().sort(function (a, b) { return b.id - a.id; });
       phrases.forEach(function (p) { byId[p.id] = p.text; });
-      Object.keys(ranks).forEach(function (id) { if (!byId[id]) delete ranks[id]; });
+      top10.forEach(function (id) { if (!byId[id]) top10.delete(id); });
       if (number1 && !byId[number1]) number1 = null;
-      buildRankList();
+      buildPickList('top10');
       buildPickList('number1');
       buildSortList(isPermutation(draft.rearrange) ? draft.rearrange : gregOrder());
       initSortable();
+      initOmissions();
       paintTop10();
       paintNumber1();
-      $('clear-top10').addEventListener('click', function () { if (Object.keys(ranks).length && confirm('Clear all your rankings?')) { ranks = {}; saveDraft(); paintTop10(); } });
+      $('clear-top10').addEventListener('click', function () { if (top10.size && confirm('Clear all your picks?')) { top10.clear(); saveDraft(); paintTop10(); } });
       $('review-top10').addEventListener('click', function () { location.hash = '#confirm-top10'; });
       $('review-number1').addEventListener('click', function () { location.hash = '#confirm-number1'; });
       $('review-rearrange').addEventListener('click', function () { location.hash = '#confirm-rearrange'; });
+      $('review-omissions').addEventListener('click', function () { location.hash = '#confirm-omissions'; });
       $('submit-btn').addEventListener('click', submit);
       window.addEventListener('hashchange', route);
       route();

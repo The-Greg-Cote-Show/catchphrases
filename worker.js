@@ -8,9 +8,12 @@
 // plus a cap of MAX_PER_CONNECTION votes per exercise from one connection (hashed IP),
 // plus a Turnstile check on every vote. Shared Wi-Fi and carrier NAT can still vote.
 
-const EXERCISES = ['top10', 'number1', 'rearrange'];
+const EXERCISES = ['top10', 'number1', 'rearrange', 'omissions'];
 const NEEDED = { top10: 10, number1: 1, rearrange: 75 };
 const TOTAL = 75;
+const MAX_OMISSIONS = 5;
+const MAX_OMISSION_CHARS = 80;
+const REVIEW_KEY = 'omissions_review';
 const MAX_VOTE_BODY = 8 * 1024;
 const MAX_ADMIN_BODY = 256 * 1024;
 const DEFAULT_PER_CONNECTION = 10;
@@ -83,7 +86,7 @@ function isAllowedOrigin(origin, env) {
 }
 
 async function handleStatus(request, env, url, cors) {
-  const done = { top10: false, number1: false, rearrange: false };
+  const done = { top10: false, number1: false, rearrange: false, omissions: false };
   let flags;
   try {
     const devHash = await hashDevice(request, env, url.searchParams.get('d'));
@@ -112,9 +115,11 @@ async function handleSubmit(request, env, cors) {
   }
   if (!data || typeof data !== 'object') return json({ ok: false, error: MSG.bad }, 400, cors);
 
-  const { exercise, ids, token, device } = data;
-  const problem = validateVote(exercise, ids);
+  const { exercise, token, device } = data;
+  const checked = exercise === 'omissions' ? cleanOmissions(data.entries) : { payload: data.ids, problem: validateVote(exercise, data.ids) };
+  const problem = checked.problem;
   if (problem) return json({ ok: false, error: MSG.bad, detail: problem }, 400, cors);
+  const payload = checked.payload;
   if (typeof token !== 'string' || !token || token.length > 2048) {
     return json({ ok: false, error: MSG.human }, 400, cors);
   }
@@ -144,7 +149,7 @@ async function handleSubmit(request, env, cors) {
         'WHERE (SELECT COUNT(*) FROM submissions WHERE ip_hash = ?2 AND exercise = ?1) < ?6 ' +
         'ON CONFLICT (device_hash, exercise) DO NOTHING'
     )
-      .bind(exercise, ipHash, devHash, JSON.stringify(ids), country, cap)
+      .bind(exercise, ipHash, devHash, JSON.stringify(payload), country, cap)
       .run();
     if (!res.meta || !res.meta.changes) {
       const dup = await env.DB.prepare('SELECT 1 AS x FROM submissions WHERE device_hash = ? AND exercise = ?')
@@ -158,6 +163,28 @@ async function handleSubmit(request, env, cors) {
     return json({ ok: false, error: MSG.busy }, 503, cors);
   }
   return json({ ok: true }, 200, cors);
+}
+
+// Biggest Omissions: 1 to 5 short free-text answers. Whitespace is tidied, blanks dropped,
+// repeats within one ballot dropped (ignoring case). Text is stored as typed otherwise;
+// grouping similar answers happens later in the admin review.
+function cleanOmissions(entries) {
+  if (!Array.isArray(entries) || entries.length > MAX_OMISSIONS) return { problem: 'entries must be a list of up to 5' };
+  const out = [];
+  const seen = new Set();
+  for (const e of entries) {
+    if (typeof e !== 'string') return { problem: 'entries must be text' };
+    if (/[\u0000-\u001f\u007f]/.test(e)) return { problem: 'no control characters' };
+    const t = e.replace(/\s+/g, ' ').trim();
+    if (!t) continue;
+    if (t.length > MAX_OMISSION_CHARS) return { problem: 'each entry is 80 characters max' };
+    const k = t.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  if (!out.length) return { problem: 'name at least one' };
+  return { payload: out, problem: null };
 }
 
 function validateVote(exercise, ids) {
@@ -216,6 +243,8 @@ async function adminApi(request, env, url, path) {
     if (path === '/admin/api/settings' && post) return adminSettings(request, env);
     if (path === '/admin/api/snapshot' && post) return adminSnapshot(request, env);
     if (path === '/admin/api/clear' && post) return adminClear(request, env);
+    if (path === '/admin/api/review' && get) return adminReviewGet(env);
+    if (path === '/admin/api/review' && post) return adminReviewSave(request, env);
     if (path === '/admin/preview' && get) return adminPreview(env);
   } catch (err) {
     console.error('admin error:', err && err.message);
@@ -343,9 +372,41 @@ async function adminClear(request, env) {
     env.DB.prepare('DELETE FROM submissions'),
     env.DB.prepare('DELETE FROM snapshots'),
     env.DB.prepare("UPDATE settings SET value = '0' WHERE key = 'results_public'"),
+    env.DB.prepare('DELETE FROM settings WHERE key = ?').bind(REVIEW_KEY),
   ]);
   const state = await adminState(env);
   return json({ ...state, cleared: (out[0].meta && out[0].meta.changes) || 0 }, 200, ADMIN_HEADERS);
+}
+
+// The admin's Biggest Omissions review (which answers count as the same thing, display names,
+// what's excluded). Built and used in the admin browser; the Worker just stores the JSON.
+async function adminReviewGet(env) {
+  const row = await env.DB.prepare('SELECT value FROM settings WHERE key = ?').bind(REVIEW_KEY).first();
+  return new Response('{"ok":true,"review":' + (row ? row.value : 'null') + '}', {
+    status: 200,
+    headers: { ...jsonHeaders(), ...ADMIN_HEADERS },
+  });
+}
+
+async function adminReviewSave(request, env) {
+  const body = await readBody(request, MAX_ADMIN_BODY);
+  if (body === null) return json({ ok: false, error: 'Review is too big (256 KB max).' }, 413, ADMIN_HEADERS);
+  let data;
+  try {
+    data = JSON.parse(body);
+  } catch {
+    return json({ ok: false, error: 'Bad JSON.' }, 400, ADMIN_HEADERS);
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return json({ ok: false, error: 'Review must be an object.' }, 400, ADMIN_HEADERS);
+  }
+  data.saved_at = new Date().toISOString();
+  await env.DB.prepare(
+    'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value'
+  )
+    .bind(REVIEW_KEY, JSON.stringify(data))
+    .run();
+  return json({ ok: true, saved_at: data.saved_at }, 200, ADMIN_HEADERS);
 }
 
 async function adminPreview(env) {
@@ -591,6 +652,17 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-sp
 .down { color: var(--hot); }
 details summary { cursor: pointer; color: var(--brand); margin: 10px 0; font-weight: 600; }
 ol { padding-left: 22px; margin: 4px 0; }
+.om-input { font: inherit; font-size: 17px; width: 100%; min-width: 180px; padding: 5px 8px; border-radius: 6px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); }
+.om-input:focus { outline: none; border-color: var(--brand); }
+.variants { color: var(--ink-3); font-size: 15px; }
+.badge { display: inline-block; font-size: 14px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: var(--hot); color: var(--on-hot); white-space: nowrap; }
+.badge.new { background: var(--brand); color: var(--on-brand); }
+.sugg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; margin: 0 0 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.sugg .pair { flex: 1; min-width: 260px; }
+.sugg .score { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.sugg button, .smallbtn { font-size: 15px; padding: 4px 10px; }
+.saveinfo { color: var(--ink-3); margin-left: 8px; align-self: center; }
+.saveinfo.dirty { color: var(--hot); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -625,7 +697,7 @@ ol { padding-left: 22px; margin: 4px 0; }
 
   <section>
     <h2>Top 10 picks</h2>
-    <p class="note">Fans rank their Top 10. Points: #1 = 10, #2 = 9, down to #10 = 1. % = share of Top 10 voters who put it anywhere in their 10. Chart shows the top 20 by points.</p>
+    <p class="note">Fans pick 10, in no particular order. % = share of Top 10 voters who picked it. Chart shows the top 20.</p>
     <div class="chartbox tall"><canvas id="chTop10" aria-label="Top 10 picks"></canvas></div>
     <details><summary>All 75 in a table</summary><div class="tablewrap"><table id="tblTop10"></table></div></details>
   </section>
@@ -645,6 +717,25 @@ ol { padding-left: 22px; margin: 4px 0; }
       <div><h3>Most split (highest spread)</h3><ol id="lstSplit"></ol></div>
     </div>
     <div class="tablewrap"><table id="tblRearr"></table></div>
+  </section>
+
+  <section>
+    <h2>Biggest Omissions</h2>
+    <p class="note">Fans type these themselves, so the same phrase shows up spelled a dozen ways. Answers that only differ by capitals, spacing, punctuation or stretched letters ("nowwww") are grouped automatically. Then you finish the job here: look at <b>Possible matches</b>, merge what's the same, fix group names the way you want them shown, exclude junk, and click <b>Save review</b>. Snapshots and the public results use this review.</p>
+    <div class="actions">
+      <button id="btnSaveReview" class="primary">Save review</button>
+      <span id="reviewInfo" class="saveinfo"></span>
+    </div>
+    <h3>Possible matches <span class="note" id="suggCount"></span></h3>
+    <div id="omSuggest"></div>
+    <h3>Groups</h3>
+    <div class="actions">
+      <button id="btnMerge">Merge checked</button>
+      <span class="note" style="align-self:center">Merges every checked group into the biggest checked one. Rename it after if you like.</span>
+    </div>
+    <div class="tablewrap"><table id="tblOm"></table></div>
+    <h3>Excluded</h3>
+    <div id="omExcluded" class="note"></div>
   </section>
 </main>
 
@@ -721,7 +812,7 @@ function renderFlags() {
 
 // ---- analysis: everything is computed here in the browser ----
 function compute() {
-  var by = { top10: [], number1: [], rearrange: [] }, days = {}, countries = {};
+  var by = { top10: [], number1: [], rearrange: [], omissions: [] }, days = {}, countries = {};
   ROWS.forEach(function (r) {
     var p;
     try { p = JSON.parse(r.payload); } catch (e) { return; }
@@ -735,20 +826,13 @@ function compute() {
   var ids = [];
   for (var i = 75; i >= 1; i--) ids.push(i);
 
-  // Top 10 ballots are ranked: payload[0] is the fan's #1. Points: #1 = 10 ... #10 = 1.
-  var n10 = by.top10.length, c10 = {}, pts = {}, rsum = {}, firsts = {};
-  by.top10.forEach(function (p) {
-    p.forEach(function (id, idx) {
-      c10[id] = (c10[id] || 0) + 1;
-      pts[id] = (pts[id] || 0) + (10 - idx);
-      rsum[id] = (rsum[id] || 0) + idx + 1;
-      if (idx === 0) firsts[id] = (firsts[id] || 0) + 1;
-    });
-  });
-  var top10 = ids.map(function (id) {
-    var c = c10[id] || 0;
-    return { id: id, points: pts[id] || 0, count: c, pct: pct(c, n10), avg_rank: c ? Math.round(rsum[id] / c * 10) / 10 : null, firsts: firsts[id] || 0 };
-  }).sort(function (a, b) { return b.points - a.points || b.count - a.count || a.id - b.id; });
+  // Top 10 ballots are 10 picks in no particular order.
+  var n10 = by.top10.length, c10 = {};
+  by.top10.forEach(function (p) { p.forEach(function (id) { c10[id] = (c10[id] || 0) + 1; }); });
+  var top10 = ids.map(function (id) { return { id: id, count: c10[id] || 0, pct: pct(c10[id] || 0, n10) }; })
+    .sort(function (a, b) { return b.count - a.count || a.id - b.id; });
+
+  OM = omAnalyze(by.omissions);
 
   var n1 = by.number1.length, c1 = {};
   by.number1.forEach(function (p) { c1[p[0]] = (c1[p[0]] || 0) + 1; });
@@ -780,12 +864,13 @@ function compute() {
 
   return {
     snapshot: {
-      version: 1,
+      version: 3,
       generated_at: new Date().toISOString(),
-      totals: { top10: n10, number1: n1, rearrange: nr },
+      totals: { top10: n10, number1: n1, rearrange: nr, omissions: OM.voters },
       top10: top10,
       number1: number1,
-      rearrange: rearrange
+      rearrange: rearrange,
+      omissions: OM.groups.slice(0, 20).map(function (g) { return { label: g.label, count: g.voters, pct: pct(g.voters, OM.voters) }; })
     },
     days: days,
     countries: countries,
@@ -827,7 +912,7 @@ function table(id, head, rows) {
 
 function render() {
   var R = compute(), S = R.snapshot, T = S.totals;
-  $('tiles').innerHTML = [['Top 10', T.top10], ['Number 1', T.number1], ['Rearrange', T.rearrange], ['All', R.total]]
+  $('tiles').innerHTML = [['Top 10', T.top10], ['Number 1', T.number1], ['Rearrange', T.rearrange], ['Omissions', T.omissions], ['All', R.total]]
     .map(function (x) { return '<div class="tile"><div class="n">' + x[1] + '</div><div class="l">' + esc(x[0]) + '</div></div>'; }).join('');
 
   var dayKeys = Object.keys(R.days).sort();
@@ -837,10 +922,12 @@ function render() {
     cKeys.map(function (c) { return [c, R.countries[c], pct(R.countries[c], R.total) + '%']; }));
 
   var t20 = S.top10.slice(0, 20);
-  barChart('chTop10', t20.map(function (x) { return short(x.id); }), t20.map(function (x) { return x.points; }), true,
-    function (v, i) { return v + ' pts, on ' + t20[i].pct + '% of ballots (' + t20[i].count + '), Greg #' + t20[i].id; });
-  table('tblTop10', [{ t: '', num: 1 }, { t: 'Catchphrase' }, { t: 'Greg #', num: 1 }, { t: 'Points', num: 1 }, { t: 'Ballots', num: 1 }, { t: '% of voters', num: 1 }, { t: 'Avg spot', num: 1 }, { t: '#1 votes', num: 1 }],
-    S.top10.map(function (x, i) { return [i + 1, phrase(x.id), x.id, x.points, x.count, x.pct + '%', x.avg_rank === null ? '' : x.avg_rank, x.firsts]; }));
+  barChart('chTop10', t20.map(function (x) { return short(x.id); }), t20.map(function (x) { return x.pct; }), true,
+    function (v, i) { return v + '% of voters (' + t20[i].count + ' picks), Greg #' + t20[i].id; });
+  table('tblTop10', [{ t: '', num: 1 }, { t: 'Catchphrase' }, { t: 'Greg #', num: 1 }, { t: 'Picks', num: 1 }, { t: '% of voters', num: 1 }],
+    S.top10.map(function (x, i) { return [i + 1, phrase(x.id), x.id, x.count, x.pct + '%']; }));
+
+  renderOmissions();
 
   barChart('chNum1', S.number1.map(function (x) { return short(x.id); }), S.number1.map(function (x) { return x.pct; }), true,
     function (v, i) { return v + '% share (' + S.number1[i].count + ' votes), Greg #' + S.number1[i].id; });
@@ -859,9 +946,251 @@ function render() {
   return R;
 }
 
+// ---- Biggest Omissions: automatic grouping + your manual review (all in this browser) ----
+// REVIEW.map pins an answer key to a group name. REVIEW.excluded hides a group.
+// REVIEW.dismissed remembers "these two are different" so the suggestion goes away.
+var OM = null, OM_BALLOTS = [], SUGG = [], GREG_KEYS = null;
+var REVIEW = { map: {}, excluded: {}, dismissed: {} };
+var REVIEW_SAVED_AT = null, REVIEW_DIRTY = false;
+
+// Lowercase, drop accents and apostrophes, punctuation to spaces, stretched letters ("nowwww", "gooooo") to one.
+function omNorm(s) {
+  return String(s == null ? '' : s).toLowerCase()
+    .normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/['‘’]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/([a-z])\1{2,}/g, '$1')
+    .replace(/\s+/g, ' ').trim();
+}
+// Grouping key ignores spaces too, so "ThatKindaThing" and "that kinda thing" land together.
+function omKey(s) { return omNorm(s).replace(/ /g, ''); }
+
+function lev(a, b) {
+  if (a === b) return 0;
+  var m = a.length, n = b.length, i, j;
+  if (!m) return n;
+  if (!n) return m;
+  var prev = new Array(n + 1), cur = new Array(n + 1), tmp;
+  for (j = 0; j <= n; j++) prev[j] = j;
+  for (i = 1; i <= m; i++) {
+    cur[0] = i;
+    for (j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1));
+    }
+    tmp = prev; prev = cur; cur = tmp;
+  }
+  return prev[n];
+}
+
+// 0..1. Best of: spelling closeness, shared words, or one answer containing the other.
+function omSim(a, b) {
+  var ka = a.replace(/ /g, ''), kb = b.replace(/ /g, '');
+  if (!ka || !kb) return 0;
+  var maxLen = Math.max(ka.length, kb.length), minLen = Math.min(ka.length, kb.length);
+  var spell = minLen / maxLen >= 0.6 ? 1 - lev(ka, kb) / maxLen : 0;
+  var sa = {}, sb = {}, inter = 0, union = 0;
+  a.split(' ').forEach(function (w) { sa[w] = 1; });
+  b.split(' ').forEach(function (w) { sb[w] = 1; });
+  Object.keys(sa).forEach(function (w) { union++; if (sb[w]) inter++; });
+  Object.keys(sb).forEach(function (w) { if (!sa[w]) union++; });
+  var words = union ? inter / union : 0;
+  var contain = minLen >= 4 && (ka.indexOf(kb) >= 0 || kb.indexOf(ka) >= 0) ? 0.8 : 0;
+  return Math.max(spell, words, contain);
+}
+
+function topRaw(raws) {
+  var best = null, n = -1;
+  Object.keys(raws).forEach(function (r) { if (raws[r] > n) { n = raws[r]; best = r; } });
+  return best;
+}
+
+function omAnalyze(ballots) {
+  OM_BALLOTS = ballots;
+  var keys = {}, rows = [];
+  ballots.forEach(function (p) {
+    var seen = {}, list = [];
+    p.forEach(function (raw) {
+      if (typeof raw !== 'string') return;
+      var k = omKey(raw);
+      if (!k) return;
+      var e = keys[k] || (keys[k] = { key: k, norm: omNorm(raw), raws: {}, voters: 0 });
+      e.raws[raw] = (e.raws[raw] || 0) + 1;
+      if (!seen[k]) { seen[k] = 1; e.voters++; list.push(k); }
+    });
+    rows.push(list);
+  });
+  function labelOf(k) { return REVIEW.map[k] || topRaw(keys[k].raws); }
+  var groups = {};
+  Object.keys(keys).forEach(function (k) {
+    var L = labelOf(k);
+    var g = groups[L] || (groups[L] = { label: L, keys: [], voters: 0, isNew: false });
+    g.keys.push(k);
+    if (!REVIEW.map[k]) g.isNew = true;
+  });
+  rows.forEach(function (list) {
+    var seenL = {};
+    list.forEach(function (k) { var L = labelOf(k); if (!seenL[L]) { seenL[L] = 1; groups[L].voters++; } });
+  });
+  var all = Object.keys(groups).map(function (L) {
+    var g = groups[L];
+    g.keys.sort(function (a, b) { return keys[b].voters - keys[a].voters; });
+    g.norm = omNorm(g.label) || keys[g.keys[0]].norm;
+    return g;
+  }).sort(function (a, b) { return b.voters - a.voters || (a.label < b.label ? -1 : 1); });
+  return {
+    voters: ballots.length,
+    keys: keys,
+    groups: all.filter(function (g) { return !REVIEW.excluded[g.label]; }),
+    excluded: all.filter(function (g) { return REVIEW.excluded[g.label]; })
+  };
+}
+
+function gregMatch(norm) {
+  if (!GREG_KEYS || !GREG_KEYS.length) GREG_KEYS = Object.keys(TEXT).map(function (id) { return { id: Number(id), norm: omNorm(TEXT[id]) }; });
+  var best = null;
+  GREG_KEYS.forEach(function (g) { var s = omSim(norm, g.norm); if (s >= 0.85 && (!best || s > best.s)) best = { id: g.id, s: s }; });
+  return best;
+}
+
+function pairKey(x, y) { return x < y ? x + '||' + y : y + '||' + x; }
+
+function omSuggestions() {
+  var gs = OM.groups.slice(0, 300), out = [];
+  for (var i = 0; i < gs.length; i++) {
+    for (var j = i + 1; j < gs.length; j++) {
+      if (REVIEW.dismissed[pairKey(gs[i].label, gs[j].label)]) continue;
+      var s = omSim(gs[i].norm, gs[j].norm);
+      if (s >= 0.75) out.push({ a: gs[i], b: gs[j], s: s });
+    }
+  }
+  out.sort(function (x, y) { return y.s - x.s || (y.a.voters + y.b.voters) - (x.a.voters + x.b.voters); });
+  return out.slice(0, 50);
+}
+
+function renderOmissions() {
+  if (!OM) return;
+  var h = '<thead><tr><th></th><th>Group name (what the public sees)</th><th class="num">Voters</th><th class="num">% of omission voters</th><th>Answers in this group</th><th></th><th></th></tr></thead><tbody>';
+  OM.groups.forEach(function (g, i) {
+    var variants = [];
+    g.keys.forEach(function (k) { var raws = OM.keys[k].raws; Object.keys(raws).forEach(function (r) { variants.push({ r: r, n: raws[r] }); }); });
+    variants.sort(function (a, b) { return b.n - a.n; });
+    var vtxt = variants.slice(0, 8).map(function (v) { return esc(v.r) + ' (' + v.n + ')'; }).join(', ') + (variants.length > 8 ? ', +' + (variants.length - 8) + ' more' : '');
+    var m = gregMatch(g.norm);
+    var flags = (m ? '<span class="badge" title="' + esc("Looks like Greg's #" + m.id + ': ' + phrase(m.id)) + '">On Greg\'s list #' + m.id + '</span> ' : '') +
+      (g.isNew && REVIEW_SAVED_AT ? '<span class="badge new">New</span>' : '');
+    h += '<tr><td><input type="checkbox" class="om-check" data-i="' + i + '" aria-label="Select group"></td>' +
+      '<td><input class="om-input" data-i="' + i + '" value="' + esc(g.label) + '" aria-label="Group name"></td>' +
+      '<td class="num">' + g.voters + '</td><td class="num">' + pct(g.voters, OM.voters) + '%</td>' +
+      '<td class="variants">' + vtxt + '</td><td>' + flags + '</td>' +
+      '<td><button class="smallbtn om-ex" data-i="' + i + '">Exclude</button></td></tr>';
+  });
+  if (!OM.groups.length) h += '<tr><td colspan="7" class="note">No omission answers yet.</td></tr>';
+  $('tblOm').innerHTML = h + '</tbody>';
+  $('omExcluded').innerHTML = OM.excluded.length
+    ? OM.excluded.map(function (g, i) { return '<div class="sugg"><span class="pair">' + esc(g.label) + ' (' + g.voters + ')</span><button class="smallbtn om-restore" data-i="' + i + '">Restore</button></div>'; }).join('')
+    : 'Nothing excluded.';
+  SUGG = omSuggestions();
+  $('suggCount').textContent = SUGG.length ? '(' + SUGG.length + ')' : '';
+  $('omSuggest').innerHTML = SUGG.length
+    ? SUGG.map(function (s, i) {
+        return '<div class="sugg"><span class="pair"><b>' + esc(s.a.label) + '</b> (' + s.a.voters + ') and <b>' + esc(s.b.label) + '</b> (' + s.b.voters + ')</span>' +
+          '<span class="score">' + Math.round(s.s * 100) + '% alike</span>' +
+          '<button class="smallbtn primary om-same" data-i="' + i + '">Same thing</button><button class="smallbtn om-diff" data-i="' + i + '">Different</button></div>';
+      }).join('')
+    : '<p class="note">No likely duplicates left to check.</p>';
+  paintReviewInfo();
+}
+
+function paintReviewInfo() {
+  var el = $('reviewInfo');
+  if (REVIEW_DIRTY) { el.textContent = 'Unsaved changes. Click Save review.'; el.className = 'saveinfo dirty'; }
+  else { el.textContent = REVIEW_SAVED_AT ? 'Saved ' + when(REVIEW_SAVED_AT) : 'Not reviewed yet.'; el.className = 'saveinfo'; }
+}
+
+function pinGroup(g, label) { g.keys.forEach(function (k) { REVIEW.map[k] = label; }); }
+function mergeInto(target, others) {
+  pinGroup(target, target.label);
+  others.forEach(function (g) { if (g !== target) pinGroup(g, target.label); });
+}
+function omChanged() {
+  REVIEW_DIRTY = true;
+  OM = omAnalyze(OM_BALLOTS);
+  renderOmissions();
+}
+
+$('tblOm').addEventListener('change', function (e) {
+  var t = e.target;
+  if (!t.classList.contains('om-input')) return;
+  var g = OM.groups[Number(t.dataset.i)];
+  var nv = t.value.replace(/\s+/g, ' ').trim();
+  if (!g || !nv || nv === g.label) { if (g) t.value = g.label; return; }
+  pinGroup(g, nv);
+  omChanged();
+  say('Renamed. If that name matches another group, they are now one group.');
+});
+$('tblOm').addEventListener('click', function (e) {
+  var b = e.target.closest('.om-ex');
+  if (!b) return;
+  var g = OM.groups[Number(b.dataset.i)];
+  pinGroup(g, g.label);
+  REVIEW.excluded[g.label] = true;
+  omChanged();
+});
+$('omExcluded').addEventListener('click', function (e) {
+  var b = e.target.closest('.om-restore');
+  if (!b) return;
+  var g = OM.excluded[Number(b.dataset.i)];
+  delete REVIEW.excluded[g.label];
+  omChanged();
+});
+$('omSuggest').addEventListener('click', function (e) {
+  var b = e.target.closest('button');
+  if (!b) return;
+  var s = SUGG[Number(b.dataset.i)];
+  if (!s) return;
+  if (b.classList.contains('om-same')) {
+    var big = s.a.voters >= s.b.voters ? s.a : s.b;
+    mergeInto(big, [big === s.a ? s.b : s.a]);
+  } else {
+    REVIEW.dismissed[pairKey(s.a.label, s.b.label)] = true;
+  }
+  omChanged();
+});
+$('btnMerge').onclick = function () {
+  var checked = Array.prototype.map.call(document.querySelectorAll('.om-check:checked'), function (c) { return OM.groups[Number(c.dataset.i)]; });
+  if (checked.length < 2) { say('Check at least two groups to merge.', true); return; }
+  checked.sort(function (a, b) { return b.voters - a.voters; });
+  mergeInto(checked[0], checked.slice(1));
+  omChanged();
+  say('Merged ' + checked.length + ' groups into "' + checked[0].label + '".');
+};
+
+async function loadReview() {
+  var d = await getJson('/admin/api/review');
+  var r = d.review || {};
+  REVIEW = { map: r.map || {}, excluded: r.excluded || {}, dismissed: r.dismissed || {} };
+  REVIEW_SAVED_AT = r.saved_at || null;
+  REVIEW_DIRTY = false;
+}
+// Pins every answer on screen to its current group, so groups stay put as new votes come in.
+async function saveReview() {
+  if (OM) OM.groups.concat(OM.excluded).forEach(function (g) { pinGroup(g, g.label); });
+  var d = await postJson('/admin/api/review', { version: 1, map: REVIEW.map, excluded: REVIEW.excluded, dismissed: REVIEW.dismissed });
+  REVIEW_SAVED_AT = d.saved_at;
+  REVIEW_DIRTY = false;
+  OM = omAnalyze(OM_BALLOTS);
+  renderOmissions();
+}
+$('btnSaveReview').onclick = async function () {
+  try { await saveReview(); say('Omissions review saved.'); }
+  catch (e) { say('Save failed: ' + e.message, true); }
+};
+
 async function refresh() {
   try {
     await loadState();
+    if (!REVIEW_DIRTY) await loadReview();
     await loadRows();
     render();
     say('Loaded ' + ROWS.length + ' submissions at ' + new Date().toLocaleTimeString() + '.');
@@ -881,6 +1210,8 @@ $('btnVoting').onclick = function () {
 $('btnSnapshot').onclick = async function () {
   try {
     await loadRows();
+    render();
+    await saveReview(); // the snapshot always uses a saved omissions review
     var R = render();
     STATE = await postJson('/admin/api/snapshot', R.snapshot);
     renderFlags();
@@ -898,16 +1229,19 @@ $('btnOffline').onclick = function () {
 };
 $('btnReload').onclick = refresh;
 $('btnClear').onclick = async function () {
-  var typed = prompt('This deletes EVERY vote and every saved snapshot, and sets results back to private. It cannot be undone from here.\n\nTip: click Download CSV first if you want a copy.\n\nType CLEAR to delete all votes.');
+  var typed = prompt('This deletes EVERY vote, every saved snapshot and the omissions review, and sets results back to private. Everyone (you included) can vote again. It cannot be undone from here.\n\nTip: click Download CSV first if you want a copy.\n\nType CLEAR to delete all votes.');
   if (typed === null) return;
   if (typed.trim() !== 'CLEAR') { say('Nothing deleted. You have to type CLEAR exactly.', true); return; }
   try {
     var d = await postJson('/admin/api/clear', { confirm: 'CLEAR' });
     STATE = d;
+    REVIEW = { map: {}, excluded: {}, dismissed: {} };
+    REVIEW_SAVED_AT = null;
+    REVIEW_DIRTY = false;
     renderFlags();
     await loadRows();
     render();
-    say('Deleted ' + d.cleared + ' votes. Snapshots cleared, results private.');
+    say('Deleted ' + d.cleared + ' votes. Everyone can vote again. Snapshots and the omissions review were cleared, results are private.');
   } catch (e) { say('Clear failed: ' + e.message, true); }
 };
 $('btnCsv').onclick = async function () {

@@ -1,10 +1,11 @@
 # Greg Cote's Top 75 Catchphrase Countdown: Your Turn
 
-Fan voting for The Greg Cote Show. Greg counted down his Top 75 catchphrases. Fans get three ways to weigh in:
+Fan voting for The Greg Cote Show. Greg counted down his Top 75 catchphrases. Fans get four ways to weigh in:
 
-1. **Your Top 10**: rank your 10 favorites, 1 through 10.
+1. **Your Top 10**: pick your 10 favorites, in no particular order.
 2. **Your Number 1**: pick one.
 3. **Redo the Countdown**: reorder all 75.
+4. **Biggest Omissions**: type up to 5 great catchphrases Greg left off. The admin dashboard groups similar answers and lets the admin review the fuzzy ones before results go out.
 
 One vote per exercise per device, with a cap on how many votes one connection (one Wi-Fi, one carrier IP) can send, plus a Cloudflare Turnstile check on every vote. Results stay private until the admin clicks "Go live".
 

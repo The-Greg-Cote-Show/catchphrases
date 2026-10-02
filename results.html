@@ -86,7 +86,7 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
   <div id="results" hidden>
     <section id="sec-top10" hidden>
       <h2>The Fans' Top 10</h2>
-      <p class="sub">Fans ranked their Top 10. A #1 vote is worth 10 points, #2 is worth 9, down to 1 point for #10.</p>
+      <p class="sub">The catchphrases picked by the most fans for their Top 10.</p>
       <ol class="list" id="list-top10"></ol>
     </section>
 
@@ -104,6 +104,12 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
         <summary>Show all 75</summary>
         <ol class="list" id="list-rearrange-rest"></ol>
       </details>
+    </section>
+
+    <section id="sec-omissions" hidden>
+      <h2>The Biggest Omissions</h2>
+      <p class="sub">The catchphrases fans say Greg left off, by share of fans who named them.</p>
+      <ol class="list" id="list-omissions"></ol>
     </section>
 
     <p class="fine" id="fine"></p>
@@ -137,7 +143,8 @@ const API_BASE = "https://catchphrase-vote.yeti-f3c.workers.dev";
     var li = document.createElement('li');
     li.className = 'item';
     var rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = rank;
-    var tx = document.createElement('span'); tx.className = 'tx'; tx.textContent = byId[id] || ('#' + id);
+    // id is a catchphrase id (number), or for omissions the group name (text)
+    var tx = document.createElement('span'); tx.className = 'tx'; tx.textContent = typeof id === 'string' ? id : (byId[id] || ('#' + id));
     var meta = document.createElement('span'); meta.className = 'meta' + (metaClass ? ' ' + metaClass : ''); meta.textContent = metaText;
     tx.appendChild(meta);
     var val = document.createElement('span'); val.className = 'val'; val.textContent = valText;
@@ -156,14 +163,9 @@ const API_BASE = "https://catchphrase-vote.yeti-f3c.workers.dev";
 
     if (t.top10 && snap.top10 && snap.top10.length) {
       any = true;
-      // Ranked ballots: points (#1 = 10 ... #10 = 1). Older snapshots without points fall back to %.
-      var ranked = typeof snap.top10[0].points === 'number';
-      var top = snap.top10.slice(0, 10);
-      var max10 = (ranked ? top[0].points : top[0].pct) || 1;
+      var top = snap.top10.slice(0, 10), max10 = top[0].pct || 1;
       top.forEach(function (x, i) {
-        var val = ranked ? x.points + ' pts' : x.pct + '%';
-        var meta = (ranked ? 'On ' + x.pct + '% of ballots. ' : '') + "Greg's #" + x.id;
-        $('list-top10').appendChild(item(i + 1, x.id, val, (ranked ? x.points : x.pct) / max10 * 100, meta));
+        $('list-top10').appendChild(item(i + 1, x.id, x.pct + '%', x.pct / max10 * 100, "Picked by " + x.pct + "% of voters. Greg's #" + x.id));
       });
       $('sec-top10').hidden = false;
     }
@@ -189,12 +191,22 @@ const API_BASE = "https://catchphrase-vote.yeti-f3c.workers.dev";
       $('sec-rearrange').hidden = false;
     }
 
+    if (t.omissions && snap.omissions && snap.omissions.length) {
+      any = true;
+      var om = snap.omissions.slice(0, 10), maxO = om[0].pct || 1;
+      om.forEach(function (x, i) {
+        $('list-omissions').appendChild(item(i + 1, String(x.label), x.pct + '%', x.pct / maxO * 100, 'Named by ' + x.pct + '% of fans who answered'));
+      });
+      $('sec-omissions').hidden = false;
+    }
+
     if (!any) { soon('Results coming soon', 'No votes in this snapshot yet.'); return; }
 
     var parts = [];
     if (t.top10) parts.push(t.top10 + ' Top 10 ballots');
     if (t.number1) parts.push(t.number1 + ' Number 1 votes');
     if (t.rearrange) parts.push(t.rearrange + ' full countdowns');
+    if (t.omissions) parts.push(t.omissions + ' omission lists');
     var when = createdAt ? new Date(createdAt) : null;
     $('fine').textContent = 'Based on ' + parts.join(', ') + '.' + (when && !isNaN(when) ? ' Counted ' + when.toLocaleDateString() + '.' : '');
     $('soon').hidden = true;

@@ -3,10 +3,10 @@
 
 CREATE TABLE IF NOT EXISTS submissions (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  exercise    TEXT    NOT NULL CHECK (exercise IN ('top10', 'number1', 'rearrange')),
+  exercise    TEXT    NOT NULL CHECK (exercise IN ('top10', 'number1', 'rearrange', 'omissions')),
   ip_hash     TEXT    NOT NULL,             -- scrambled connection (HMAC of the IP), never the IP itself
   device_hash TEXT    NOT NULL,             -- scrambled random device id from the browser
-  payload     TEXT    NOT NULL,             -- JSON array of catchphrase ids, never text
+  payload     TEXT    NOT NULL,             -- JSON array: catchphrase ids, or for omissions the typed answers
   created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   country     TEXT,
   UNIQUE (device_hash, exercise)            -- one vote per device per exercise; also indexes the status lookup

@@ -146,7 +146,8 @@ In the dashboard, click **Clear all votes**. When it asks, type `CLEAR` (capital
 
 ## Results day
 
-1. In the dashboard, click **Save snapshot**.
-2. Click **Preview public page** to see exactly what fans will see.
-3. Happy with it? Click **Go live** and confirm.
-4. Changed your mind? Click **Take offline**.
+1. In the dashboard, scroll to **Biggest Omissions**. Work through **Possible matches** (Same thing / Different), fix group names, exclude junk, and click **Save review**.
+2. Click **Save snapshot**.
+3. Click **Preview public page** to see exactly what fans will see.
+4. Happy with it? Click **Go live** and confirm.
+5. Changed your mind? Click **Take offline**.
