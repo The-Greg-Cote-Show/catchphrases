@@ -127,6 +127,12 @@ main { flex: 1; padding-bottom: 24px; }
 .confirm-actions { display: grid; gap: 10px; margin-top: 8px; }
 .still-open { margin: 16px 0; }
 
+/* Pop-up message in the middle of the screen. Tap outside it (or a button) to close. */
+.pop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(2, 10, 14, .72); }
+.pop-box { width: 100%; max-width: 420px; background: var(--surface); border: 2px solid var(--brand); border-radius: var(--radius); padding: 20px; box-shadow: 0 10px 40px rgba(0, 0, 0, .5); }
+.pop-msg { margin: 0 0 16px; font-size: 22px; font-weight: 600; color: var(--ink); }
+.pop-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
 @media (min-width: 600px) {
   h1 { font-size: 46px; }
   .cards { grid-template-columns: 1fr 1fr; }
@@ -264,6 +270,16 @@ main { flex: 1; padding-bottom: 24px; }
   </section>
 </main>
 
+<div id="pop" class="pop" role="dialog" aria-modal="true" aria-labelledby="pop-msg" hidden>
+  <div class="pop-box">
+    <p id="pop-msg" class="pop-msg"></p>
+    <div class="pop-actions">
+      <button type="button" class="btn ghost" id="pop-no" hidden></button>
+      <button type="button" class="btn primary" id="pop-ok">OK</button>
+    </div>
+  </div>
+</div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.7/Sortable.min.js" integrity="sha512-ri8dokds012Oxz+iFzMs4KNJXVc+h7J1zq6unM1NTtzBLj4jD1R5BWiK6QycK0TdSdkt7zYcIcv6sUPhmYkbdQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 <script>
@@ -371,20 +387,37 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     $('nomatch-' + ex).hidden = shown > 0;
   }
 
-  // ---------- top 10 (10 picks, no particular order) ----------
+  // ---------- pop-up message (middle of the screen; tap outside or a button to close) ----------
+  var popYes = null;
+  function popup(text, okLabel, noLabel, onYes) {
+    $('pop-msg').textContent = text;
+    $('pop-ok').textContent = okLabel || 'OK';
+    $('pop-no').textContent = noLabel || '';
+    $('pop-no').hidden = !noLabel;
+    popYes = onYes || null;
+    $('pop').hidden = false;
+    $('pop-ok').focus();
+  }
+  function closePopup(yes) {
+    if ($('pop').hidden) return;
+    $('pop').hidden = true;
+    var f = popYes;
+    popYes = null;
+    if (yes && f) f();
+  }
+
+  // ---------- top 10 (up to 10 picks, no particular order) ----------
   function toggleTop10(id) {
     if (top10.has(id)) top10.delete(id);
-    else if (top10.size >= 10) { flashCounter(); return; }
+    else if (top10.size >= 10) { popup("You've already selected 10. Deselect at least one to add more picks."); return; }
     else top10.add(id);
     saveDraft();
     paintTop10();
   }
-  function flashCounter() {
-    var c = $('count-top10');
-    c.textContent = "That's 10. Unpick one first.";
-    c.className = 'counter warn';
-    clearTimeout(flashCounter.t);
-    flashCounter.t = setTimeout(paintTop10, 1600);
+  function reviewTop10() {
+    if (top10.size >= 10) { location.hash = '#confirm-top10'; return; }
+    popup("You've selected " + top10.size + ' out of 10. Are you sure you want to proceed?', 'Yes, proceed', 'Keep picking',
+      function () { location.hash = '#confirm-top10'; });
   }
   function paintTop10() {
     var btns = $('list-top10').querySelectorAll('.pick');
@@ -392,7 +425,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     var c = $('count-top10');
     c.textContent = top10.size + ' of 10';
     c.className = 'counter' + (top10.size === 10 ? ' full' : '');
-    $('review-top10').disabled = top10.size !== 10;
+    $('review-top10').disabled = top10.size === 0;
   }
 
   // ---------- number 1 ----------
@@ -552,7 +585,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   }
   function ready(ex) {
     var items = itemsFor(ex);
-    if (ex === 'top10') return items.length === 10;
+    if (ex === 'top10') return items.length >= 1 && items.length <= 10;
     if (ex === 'number1') return items.length === 1;
     if (ex === 'omissions') return items.length >= 1;
     return isPermutation(items);
@@ -561,6 +594,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   function route() {
     var h = location.hash.replace(/^#/, '');
     var m;
+    closePopup(false);
     removeTurnstile();
     if (EX[h]) {
       if (done[h]) return showDone(h, 'Your ' + EX[h].short + ' is already in. Thanks!');
@@ -741,7 +775,11 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
       paintTop10();
       paintNumber1();
       $('clear-top10').addEventListener('click', function () { if (top10.size && confirm('Clear all your picks?')) { top10.clear(); saveDraft(); paintTop10(); } });
-      $('review-top10').addEventListener('click', function () { location.hash = '#confirm-top10'; });
+      $('review-top10').addEventListener('click', reviewTop10);
+      $('pop-ok').addEventListener('click', function () { closePopup(true); });
+      $('pop-no').addEventListener('click', function () { closePopup(false); });
+      $('pop').addEventListener('click', function (e) { if (e.target === $('pop')) closePopup(false); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePopup(false); });
       $('review-number1').addEventListener('click', function () { location.hash = '#confirm-number1'; });
       $('review-rearrange').addEventListener('click', function () { location.hash = '#confirm-rearrange'; });
       $('review-omissions').addEventListener('click', function () { location.hash = '#confirm-omissions'; });

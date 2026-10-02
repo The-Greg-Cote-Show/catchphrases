@@ -191,7 +191,10 @@ function validateVote(exercise, ids) {
   if (!EXERCISES.includes(exercise)) return 'unknown exercise';
   if (!Array.isArray(ids)) return 'ids must be a list';
   const need = NEEDED[exercise];
-  if (ids.length !== need) return 'need exactly ' + need + ' ids';
+  if (exercise === 'top10') {
+    // Top 10 is "up to 10": fans can lock in fewer if they want.
+    if (ids.length < 1 || ids.length > need) return 'need 1 to ' + need + ' ids';
+  } else if (ids.length !== need) return 'need exactly ' + need + ' ids';
   const seen = new Set();
   for (const id of ids) {
     if (!Number.isInteger(id) || id < 1 || id > TOTAL) return 'ids must be whole numbers from 1 to 75';
