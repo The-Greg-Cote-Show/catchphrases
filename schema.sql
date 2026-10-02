@@ -2,15 +2,17 @@
 -- Paste this whole file into the D1 console once. Safe to run again (IF NOT EXISTS / OR IGNORE).
 
 CREATE TABLE IF NOT EXISTS submissions (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  exercise   TEXT    NOT NULL CHECK (exercise IN ('top10', 'number1', 'rearrange')),
-  ip_hash    TEXT    NOT NULL,
-  payload    TEXT    NOT NULL,              -- JSON array of catchphrase ids, never text
-  created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-  country    TEXT,
-  UNIQUE (ip_hash, exercise)                -- one per connection per exercise; also indexes the status lookup
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  exercise    TEXT    NOT NULL CHECK (exercise IN ('top10', 'number1', 'rearrange')),
+  ip_hash     TEXT    NOT NULL,             -- scrambled connection (HMAC of the IP), never the IP itself
+  device_hash TEXT    NOT NULL,             -- scrambled random device id from the browser
+  payload     TEXT    NOT NULL,             -- JSON array of catchphrase ids, never text
+  created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  country     TEXT,
+  UNIQUE (device_hash, exercise)            -- one vote per device per exercise; also indexes the status lookup
 );
 
+CREATE INDEX IF NOT EXISTS idx_submissions_ip ON submissions (ip_hash, exercise);
 CREATE INDEX IF NOT EXISTS idx_submissions_exercise ON submissions (exercise, id);
 
 CREATE TABLE IF NOT EXISTS settings (

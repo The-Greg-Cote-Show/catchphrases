@@ -2,16 +2,22 @@
 // Thin "Bird Feeder" API: validate, hash the IP, verify Turnstile, store one row.
 // All analysis happens in the admin dashboard's browser, never here.
 // Secrets (Cloudflare secrets only): ADMIN_KEY, IP_SALT, TURNSTILE_SECRET
-// Vars (wrangler.toml): ALLOWED_ORIGINS, SITE_URL
+// Vars (wrangler.toml): ALLOWED_ORIGINS, SITE_URL, MAX_PER_CONNECTION
+//
+// Vote limits: one vote per device per exercise (random device id kept in the browser),
+// plus a cap of MAX_PER_CONNECTION votes per exercise from one connection (hashed IP),
+// plus a Turnstile check on every vote. Shared Wi-Fi and carrier NAT can still vote.
 
 const EXERCISES = ['top10', 'number1', 'rearrange'];
 const NEEDED = { top10: 10, number1: 1, rearrange: 75 };
 const TOTAL = 75;
 const MAX_VOTE_BODY = 8 * 1024;
 const MAX_ADMIN_BODY = 256 * 1024;
+const DEFAULT_PER_CONNECTION = 10;
 
 const MSG = {
-  duplicate: 'Looks like a vote from this connection is already in for this one.',
+  duplicate: 'Looks like you already voted on this one.',
+  full: "We've had a lot of votes from this connection already, so we can't take another one from here.",
   busy: 'Voting is busy, try again later.',
   closed: "Voting isn't open right now. Check back soon.",
   notSetUp: "Voting isn't set up yet. Check back soon.",
@@ -36,14 +42,14 @@ export default {
 async function route(request, env) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '') || '/';
-  if (path.startsWith('/api/')) return publicApi(request, env, path);
+  if (path.startsWith('/api/')) return publicApi(request, env, url, path);
   if (path === '/admin' || path.startsWith('/admin/')) return adminApi(request, env, url, path);
   return new Response('Not found', { status: 404 });
 }
 
 // ---------------------------------------------------------------- public API
 
-async function publicApi(request, env, path) {
+async function publicApi(request, env, url, path) {
   const origin = request.headers.get('Origin');
   const okOrigin = isAllowedOrigin(origin, env) ? origin : null;
   if (origin && !okOrigin) return json({ ok: false, error: 'Not allowed.' }, 403);
@@ -58,7 +64,7 @@ async function publicApi(request, env, path) {
     : { Vary: 'Origin' };
 
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-  if (path === '/api/status' && request.method === 'GET') return handleStatus(request, env, cors);
+  if (path === '/api/status' && request.method === 'GET') return handleStatus(request, env, url, cors);
   if (path === '/api/results' && request.method === 'GET') return handleResults(env, cors);
   if (path === '/api/submit' && request.method === 'POST') {
     if (!okOrigin) return json({ ok: false, error: 'Not allowed.' }, 403);
@@ -76,13 +82,13 @@ function isAllowedOrigin(origin, env) {
     .includes(origin);
 }
 
-async function handleStatus(request, env, cors) {
+async function handleStatus(request, env, url, cors) {
   const done = { top10: false, number1: false, rearrange: false };
   let flags;
   try {
-    const ipHash = await hashIp(request, env);
+    const devHash = await hashDevice(request, env, url.searchParams.get('d'));
     const stmts = [flagsStmt(env)];
-    if (ipHash) stmts.push(env.DB.prepare('SELECT exercise FROM submissions WHERE ip_hash = ?').bind(ipHash));
+    if (devHash) stmts.push(env.DB.prepare('SELECT exercise FROM submissions WHERE device_hash = ?').bind(devHash));
     const out = await env.DB.batch(stmts);
     flags = readFlags(out[0].results);
     if (out[1]) for (const r of out[1].results) if (r.exercise in done) done[r.exercise] = true;
@@ -106,7 +112,7 @@ async function handleSubmit(request, env, cors) {
   }
   if (!data || typeof data !== 'object') return json({ ok: false, error: MSG.bad }, 400, cors);
 
-  const { exercise, ids, token } = data;
+  const { exercise, ids, token, device } = data;
   const problem = validateVote(exercise, ids);
   if (problem) return json({ ok: false, error: MSG.bad, detail: problem }, 400, cors);
   if (typeof token !== 'string' || !token || token.length > 2048) {
@@ -127,16 +133,25 @@ async function handleSubmit(request, env, cors) {
   if (!(await verifyTurnstile(token, ip, env))) return json({ ok: false, error: MSG.human }, 403, cors);
 
   const ipHash = await hashIp(request, env);
+  const devHash = await hashDevice(request, env, device);
+  const cap = Math.max(1, parseInt(env.MAX_PER_CONNECTION, 10) || DEFAULT_PER_CONNECTION);
   const country = request.cf && request.cf.country ? String(request.cf.country).slice(0, 2) : null;
   try {
+    // One statement: insert only if this connection is under its cap, and never twice per device.
     const res = await env.DB.prepare(
-      'INSERT INTO submissions (exercise, ip_hash, payload, country) VALUES (?, ?, ?, ?) ' +
-        'ON CONFLICT (ip_hash, exercise) DO NOTHING'
+      'INSERT INTO submissions (exercise, ip_hash, device_hash, payload, country) ' +
+        'SELECT ?1, ?2, ?3, ?4, ?5 ' +
+        'WHERE (SELECT COUNT(*) FROM submissions WHERE ip_hash = ?2 AND exercise = ?1) < ?6 ' +
+        'ON CONFLICT (device_hash, exercise) DO NOTHING'
     )
-      .bind(exercise, ipHash, JSON.stringify(ids), country)
+      .bind(exercise, ipHash, devHash, JSON.stringify(ids), country, cap)
       .run();
     if (!res.meta || !res.meta.changes) {
-      return json({ ok: false, duplicate: true, error: MSG.duplicate }, 409, cors);
+      const dup = await env.DB.prepare('SELECT 1 AS x FROM submissions WHERE device_hash = ? AND exercise = ?')
+        .bind(devHash, exercise)
+        .first();
+      if (dup) return json({ ok: false, duplicate: true, error: MSG.duplicate }, 409, cors);
+      return json({ ok: false, full: true, error: MSG.full }, 429, cors);
     }
   } catch (err) {
     console.error('submit db error:', err && err.message);
@@ -200,6 +215,7 @@ async function adminApi(request, env, url, path) {
     if (path === '/admin/export.csv' && get) return adminCsv(env, url);
     if (path === '/admin/api/settings' && post) return adminSettings(request, env);
     if (path === '/admin/api/snapshot' && post) return adminSnapshot(request, env);
+    if (path === '/admin/api/clear' && post) return adminClear(request, env);
     if (path === '/admin/preview' && get) return adminPreview(env);
   } catch (err) {
     console.error('admin error:', err && err.message);
@@ -231,7 +247,7 @@ function pageParams(url, def, max) {
 
 async function fetchRows(env, after, limit) {
   const { results } = await env.DB.prepare(
-    'SELECT id, exercise, ip_hash, payload, created_at, country FROM submissions WHERE id > ? ORDER BY id LIMIT ?'
+    'SELECT id, exercise, ip_hash, device_hash, payload, created_at, country FROM submissions WHERE id > ? ORDER BY id LIMIT ?'
   )
     .bind(after, limit)
     .all();
@@ -248,9 +264,11 @@ async function adminRows(env, url) {
 async function adminCsv(env, url) {
   const { after, limit } = pageParams(url, 5000, 5000);
   const { results, next } = await fetchRows(env, after, limit);
-  const lines = after === 0 ? ['id,exercise,created_at,country,ip_hash,payload'] : [];
+  const lines = after === 0 ? ['id,exercise,created_at,country,ip_hash,device_hash,payload'] : [];
   for (const r of results) {
-    lines.push([r.id, r.exercise, r.created_at, r.country || '', r.ip_hash, r.payload].map(csvField).join(','));
+    lines.push(
+      [r.id, r.exercise, r.created_at, r.country || '', r.ip_hash, r.device_hash, r.payload].map(csvField).join(',')
+    );
   }
   const headers = {
     ...ADMIN_HEADERS,
@@ -306,6 +324,28 @@ async function adminSnapshot(request, env) {
   }
   await env.DB.prepare('INSERT INTO snapshots (data) VALUES (?)').bind(JSON.stringify(data)).run();
   return json(await adminState(env), 200, ADMIN_HEADERS);
+}
+
+// Wipes every vote. Snapshots go too (they were computed from those votes), and results go
+// back to private so an old snapshot can never be published by accident.
+async function adminClear(request, env) {
+  const body = await readBody(request, MAX_ADMIN_BODY);
+  let data;
+  try {
+    data = JSON.parse(body || '');
+  } catch {
+    data = null;
+  }
+  if (!data || data.confirm !== 'CLEAR') {
+    return json({ ok: false, error: 'Type CLEAR to confirm.' }, 400, ADMIN_HEADERS);
+  }
+  const out = await env.DB.batch([
+    env.DB.prepare('DELETE FROM submissions'),
+    env.DB.prepare('DELETE FROM snapshots'),
+    env.DB.prepare("UPDATE settings SET value = '0' WHERE key = 'results_public'"),
+  ]);
+  const state = await adminState(env);
+  return json({ ...state, cleared: (out[0].meta && out[0].meta.changes) || 0 }, 200, ADMIN_HEADERS);
 }
 
 async function adminPreview(env) {
@@ -378,6 +418,21 @@ async function hashIp(request, env) {
     'sign',
   ]);
   return toHex(await crypto.subtle.sign('HMAC', key, enc.encode(normalizeIp(ip))));
+}
+
+// HMAC of the random device id the page keeps in localStorage. A page that sends no
+// (or a malformed) id falls back to its connection, which means one vote per connection.
+async function hashDevice(request, env, device) {
+  const ip = request.headers.get('CF-Connecting-IP');
+  if (!env.IP_SALT) return null;
+  let msg;
+  if (typeof device === 'string' && /^[A-Za-z0-9-]{16,64}$/.test(device)) msg = 'dev|' + device;
+  else if (ip) msg = 'nodev|' + normalizeIp(ip);
+  else return null;
+  const key = await crypto.subtle.importKey('raw', enc.encode(env.IP_SALT), { name: 'HMAC', hash: 'SHA-256' }, false, [
+    'sign',
+  ]);
+  return toHex(await crypto.subtle.sign('HMAC', key, enc.encode(msg)));
 }
 
 // IPv4 stays as is. IPv6 is cut to its /64 network, because phones rotate the second half.
@@ -479,40 +534,45 @@ const ADMIN_HTML = String.raw`<!doctype html>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js" integrity="sha512-WoViKhKD4qI2WruSZqv9+kvM4WfFhUMQCLN4QlDTt5aU56fLQy2gYoxWIqlEnXqJy/+Ac5q/hk1oWfqnMDhwMA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
-/* ===== STYLE BLOCK (restyle here) ===== */
+/* ===== STYLE BLOCK (restyle here) =====
+   Miami Dolphins palette. To use the CoteCup palette instead, swap in:
+   --brand:#e8b84b; --hot:#e05252; --bg:#080c14; --surface:#0f1623; --surface-2:#141d2e;
+   --line:#24304a; --ink:#eef2f7; --ink-2:#b9c4d6; --ink-3:#7a8ba8; --on-brand:#0b0f17; --on-hot:#ffffff; */
 :root {
-  --amber: #EF9F27;
-  --coral: #D85A30;
-  --bg: #15130f;
-  --surface: #211d18;
-  --surface-2: #2b261f;
-  --line: #3a332a;
-  --ink: #f4ede3;
-  --ink-2: #c9bfb1;
-  --ink-3: #8f8679;
-  --good: #6cc68a;
+  --brand: #00A3AD;
+  --hot: #FC4C02;
+  --bg: #061a22;
+  --surface: #0b2631;
+  --surface-2: #10313e;
+  --line: #1d4655;
+  --ink: #eef6f7;
+  --ink-2: #b4cdd2;
+  --ink-3: #7c9aa2;
+  --on-brand: #04161c;
+  --on-hot: #1a0800;
+  --good: #4fd18b;
   --font: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
 }
 /* ===== END STYLE BLOCK ===== */
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 18px; line-height: 1.35; }
 header, main { max-width: 1100px; margin: 0 auto; padding: 16px; }
-h1 { font-size: 30px; margin: 4px 0 12px; color: var(--amber); letter-spacing: .5px; }
-h2 { font-size: 26px; margin: 28px 0 8px; color: var(--amber); border-bottom: 2px solid var(--line); padding-bottom: 4px; }
+h1 { font-size: 30px; margin: 4px 0 12px; color: var(--brand); letter-spacing: .5px; }
+h2 { font-size: 26px; margin: 28px 0 8px; color: var(--brand); border-bottom: 2px solid var(--line); padding-bottom: 4px; }
 h3 { font-size: 20px; margin: 14px 0 6px; color: var(--ink-2); }
 .flags { display: flex; gap: 10px; flex-wrap: wrap; }
 .flag { padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 20px; background: var(--surface-2); border: 2px solid var(--line); }
 .flag.on { border-color: var(--good); color: var(--good); }
-.flag.off { border-color: var(--coral); color: var(--coral); }
+.flag.off { border-color: var(--hot); color: var(--hot); }
 .snapinfo { margin: 10px 0; color: var(--ink-2); }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 button, .btn { font: inherit; font-weight: 600; font-size: 18px; padding: 9px 14px; border-radius: 8px; border: 2px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; text-decoration: none; display: inline-block; }
-button:hover, .btn:hover { border-color: var(--amber); }
-button.primary { background: var(--amber); color: #1a1208; border-color: var(--amber); }
-button.danger { background: var(--coral); color: #fff; border-color: var(--coral); }
+button:hover, .btn:hover { border-color: var(--brand); }
+button.primary { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
+button.danger { background: var(--hot); color: var(--on-hot); border-color: var(--hot); }
 button:disabled { opacity: .4; cursor: not-allowed; }
 #msg { min-height: 1.4em; color: var(--ink-2); }
-#msg.bad { color: var(--coral); font-weight: 600; }
+#msg.bad { color: var(--hot); font-weight: 600; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
 .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
 .tile .n { font-size: 34px; font-weight: 700; color: var(--ink); }
@@ -528,8 +588,8 @@ th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line
 th { color: var(--ink-3); font-weight: 600; position: sticky; top: 0; background: var(--bg); }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .up { color: var(--good); }
-.down { color: var(--coral); }
-details summary { cursor: pointer; color: var(--amber); margin: 10px 0; font-weight: 600; }
+.down { color: var(--hot); }
+details summary { cursor: pointer; color: var(--brand); margin: 10px 0; font-weight: 600; }
 ol { padding-left: 22px; margin: 4px 0; }
 </style>
 </head>
@@ -549,6 +609,7 @@ ol { padding-left: 22px; margin: 4px 0; }
     <button id="btnOffline">Take offline</button>
     <button id="btnReload">Reload data</button>
     <button id="btnCsv">Download CSV</button>
+    <button id="btnClear" class="danger">Clear all votes</button>
   </div>
   <p id="msg" role="status"></p>
 </header>
@@ -564,7 +625,7 @@ ol { padding-left: 22px; margin: 4px 0; }
 
   <section>
     <h2>Top 10 picks</h2>
-    <p class="note">% = share of Top 10 voters who picked it. Chart shows the top 20.</p>
+    <p class="note">Fans rank their Top 10. Points: #1 = 10, #2 = 9, down to #10 = 1. % = share of Top 10 voters who put it anywhere in their 10. Chart shows the top 20 by points.</p>
     <div class="chartbox tall"><canvas id="chTop10" aria-label="Top 10 picks"></canvas></div>
     <details><summary>All 75 in a table</summary><div class="tablewrap"><table id="tblTop10"></table></div></details>
   </section>
@@ -594,7 +655,8 @@ var TEXT = {};
 var STATE = null;
 var ROWS = [];
 var charts = {};
-var AMBER = '#EF9F27', GRID = 'rgba(244,237,227,0.08)', INK2 = '#c9bfb1';
+var BAR = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#00A3AD';
+var GRID = 'rgba(238,246,247,0.08)', INK2 = getComputedStyle(document.documentElement).getPropertyValue('--ink-2').trim() || '#b4cdd2';
 var CHART_FONT = '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", Arial, sans-serif';
 
 function $(id) { return document.getElementById(id); }
@@ -673,10 +735,20 @@ function compute() {
   var ids = [];
   for (var i = 75; i >= 1; i--) ids.push(i);
 
-  var n10 = by.top10.length, c10 = {};
-  by.top10.forEach(function (p) { p.forEach(function (id) { c10[id] = (c10[id] || 0) + 1; }); });
-  var top10 = ids.map(function (id) { return { id: id, count: c10[id] || 0, pct: pct(c10[id] || 0, n10) }; })
-    .sort(function (a, b) { return b.count - a.count || a.id - b.id; });
+  // Top 10 ballots are ranked: payload[0] is the fan's #1. Points: #1 = 10 ... #10 = 1.
+  var n10 = by.top10.length, c10 = {}, pts = {}, rsum = {}, firsts = {};
+  by.top10.forEach(function (p) {
+    p.forEach(function (id, idx) {
+      c10[id] = (c10[id] || 0) + 1;
+      pts[id] = (pts[id] || 0) + (10 - idx);
+      rsum[id] = (rsum[id] || 0) + idx + 1;
+      if (idx === 0) firsts[id] = (firsts[id] || 0) + 1;
+    });
+  });
+  var top10 = ids.map(function (id) {
+    var c = c10[id] || 0;
+    return { id: id, points: pts[id] || 0, count: c, pct: pct(c, n10), avg_rank: c ? Math.round(rsum[id] / c * 10) / 10 : null, firsts: firsts[id] || 0 };
+  }).sort(function (a, b) { return b.points - a.points || b.count - a.count || a.id - b.id; });
 
   var n1 = by.number1.length, c1 = {};
   by.number1.forEach(function (p) { c1[p[0]] = (c1[p[0]] || 0) + 1; });
@@ -726,7 +798,7 @@ function barChart(id, labels, data, horizontal, fmt) {
   if (charts[id]) charts[id].destroy();
   charts[id] = new Chart($(id), {
     type: 'bar',
-    data: { labels: labels, datasets: [{ data: data, backgroundColor: AMBER, borderRadius: 4, borderSkipped: 'start', maxBarThickness: 22 }] },
+    data: { labels: labels, datasets: [{ data: data, backgroundColor: BAR, borderRadius: 4, borderSkipped: 'start', maxBarThickness: 22 }] },
     options: {
       indexAxis: horizontal ? 'y' : 'x',
       animation: false,
@@ -765,10 +837,10 @@ function render() {
     cKeys.map(function (c) { return [c, R.countries[c], pct(R.countries[c], R.total) + '%']; }));
 
   var t20 = S.top10.slice(0, 20);
-  barChart('chTop10', t20.map(function (x) { return short(x.id); }), t20.map(function (x) { return x.pct; }), true,
-    function (v, i) { return v + '% of voters (' + t20[i].count + ' picks), Greg #' + t20[i].id; });
-  table('tblTop10', [{ t: '' , num: 1 }, { t: 'Catchphrase' }, { t: 'Greg #', num: 1 }, { t: 'Picks', num: 1 }, { t: '% of voters', num: 1 }],
-    S.top10.map(function (x, i) { return [i + 1, phrase(x.id), x.id, x.count, x.pct + '%']; }));
+  barChart('chTop10', t20.map(function (x) { return short(x.id); }), t20.map(function (x) { return x.points; }), true,
+    function (v, i) { return v + ' pts, on ' + t20[i].pct + '% of ballots (' + t20[i].count + '), Greg #' + t20[i].id; });
+  table('tblTop10', [{ t: '', num: 1 }, { t: 'Catchphrase' }, { t: 'Greg #', num: 1 }, { t: 'Points', num: 1 }, { t: 'Ballots', num: 1 }, { t: '% of voters', num: 1 }, { t: 'Avg spot', num: 1 }, { t: '#1 votes', num: 1 }],
+    S.top10.map(function (x, i) { return [i + 1, phrase(x.id), x.id, x.points, x.count, x.pct + '%', x.avg_rank === null ? '' : x.avg_rank, x.firsts]; }));
 
   barChart('chNum1', S.number1.map(function (x) { return short(x.id); }), S.number1.map(function (x) { return x.pct; }), true,
     function (v, i) { return v + '% share (' + S.number1[i].count + ' votes), Greg #' + S.number1[i].id; });
@@ -825,6 +897,19 @@ $('btnOffline').onclick = function () {
   setFlag({ results_public: false }, 'Results are PRIVATE.');
 };
 $('btnReload').onclick = refresh;
+$('btnClear').onclick = async function () {
+  var typed = prompt('This deletes EVERY vote and every saved snapshot, and sets results back to private. It cannot be undone from here.\n\nTip: click Download CSV first if you want a copy.\n\nType CLEAR to delete all votes.');
+  if (typed === null) return;
+  if (typed.trim() !== 'CLEAR') { say('Nothing deleted. You have to type CLEAR exactly.', true); return; }
+  try {
+    var d = await postJson('/admin/api/clear', { confirm: 'CLEAR' });
+    STATE = d;
+    renderFlags();
+    await loadRows();
+    render();
+    say('Deleted ' + d.cleared + ' votes. Snapshots cleared, results private.');
+  } catch (e) { say('Clear failed: ' + e.message, true); }
+};
 $('btnCsv').onclick = async function () {
   try {
     var parts = [], after = 0;

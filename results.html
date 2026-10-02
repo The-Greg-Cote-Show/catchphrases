@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Results: Greg Cote's Top 75 Catchphrase Countdown</title>
 <meta name="description" content="How the fans voted on Greg Cote's Top 75 catchphrases.">
-<meta name="theme-color" content="#15130f">
+<meta name="theme-color" content="#061a22">
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,48 +15,51 @@
    STYLE BLOCK: everything visual lives here. Restyle after the rebrand.
    ===================================================================== */
 :root {
-  --amber: #EF9F27;
-  --coral: #D85A30;
-  --bg: #15130f;
-  --surface: #211d18;
-  --surface-2: #2b261f;
-  --line: #3a332a;
-  --ink: #f4ede3;
-  --ink-2: #c9bfb1;
-  --ink-3: #8f8679;
-  --good: #6cc68a;
+  /* Miami Dolphins palette (same as index.html; CoteCup swap list is in index.html) */
+  --brand: #00A3AD;
+  --brand-text: #2ec4cc;
+  --hot: #FC4C02;
+  --bg: #061a22;
+  --head: #0a2a35;
+  --surface: #0b2631;
+  --surface-2: #10313e;
+  --line: #1d4655;
+  --ink: #eef6f7;
+  --ink-2: #b4cdd2;
+  --ink-3: #7c9aa2;
+  --good: #4fd18b;
   --radius: 12px;
   --font: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 19px; line-height: 1.35; min-height: 100vh; display: flex; flex-direction: column; }
-a { color: var(--amber); }
+a { color: var(--brand-text); }
 [hidden] { display: none !important; }
 .wrap { width: 100%; max-width: 720px; margin: 0 auto; padding: 0 16px; }
-.site-head { padding: 22px 0 10px; border-bottom: 3px solid var(--coral); background: linear-gradient(180deg, #221a12 0%, var(--bg) 100%); }
-.kicker { margin: 0; color: var(--coral); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 15px; }
+.site-head { padding: 22px 0 10px; border-bottom: 4px solid var(--hot); background: linear-gradient(180deg, var(--head) 0%, var(--bg) 100%); }
+.kicker { margin: 0; color: var(--hot); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 15px; }
 h1 { margin: 4px 0 6px; font-size: 34px; line-height: 1.02; font-weight: 800; text-transform: uppercase; }
-h1 .accent { color: var(--amber); display: block; }
-h2 { font-size: 28px; margin: 28px 0 4px; text-transform: uppercase; font-weight: 800; color: var(--amber); }
+h1 .accent { color: var(--brand-text); display: block; }
+h2 { font-size: 28px; margin: 28px 0 4px; text-transform: uppercase; font-weight: 800; color: var(--brand-text); }
 .sub { color: var(--ink-3); margin: 0 0 10px; }
 main { flex: 1; padding-bottom: 24px; }
-.preview { margin-top: 12px; padding: 10px 14px; border-radius: var(--radius); border: 2px dashed var(--coral); color: var(--coral); font-weight: 700; }
+.preview { margin-top: 12px; padding: 10px 14px; border-radius: var(--radius); border: 2px dashed var(--hot); color: var(--hot); font-weight: 700; }
 .soon { margin: 40px 0; text-align: center; }
-.soon .big { font-size: 40px; font-weight: 800; text-transform: uppercase; color: var(--amber); }
+.soon .big { font-size: 40px; font-weight: 800; text-transform: uppercase; color: var(--brand-text); }
 .soon p { color: var(--ink-2); }
 .list { list-style: none; margin: 0; padding: 0; }
 .item { display: grid; grid-template-columns: 44px 1fr auto; gap: 4px 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 0 0 8px; }
-.item .rk { font-size: 24px; font-weight: 800; color: var(--amber); text-align: right; font-variant-numeric: tabular-nums; }
+.item .rk { font-size: 24px; font-weight: 800; color: var(--brand-text); text-align: right; font-variant-numeric: tabular-nums; }
 .item .tx { min-width: 0; }
 .item .meta { display: block; font-size: 15px; color: var(--ink-3); }
 .item .val { font-weight: 800; font-size: 21px; text-align: right; font-variant-numeric: tabular-nums; }
 .item .bar { grid-column: 2 / 4; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
-.item .bar span { display: block; height: 100%; background: var(--amber); border-radius: 3px; }
+.item .bar span { display: block; height: 100%; background: var(--brand); border-radius: 3px; }
 .up { color: var(--good); }
-.down { color: var(--coral); }
+.down { color: var(--hot); }
 .even { color: var(--ink-3); }
-details summary { cursor: pointer; color: var(--amber); font-weight: 700; margin: 8px 0 12px; }
+details summary { cursor: pointer; color: var(--brand-text); font-weight: 700; margin: 8px 0 12px; }
 .fine { color: var(--ink-3); font-size: 16px; margin-top: 24px; }
 footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px; padding: 16px 0 calc(16px + env(safe-area-inset-bottom)); }
 @media (min-width: 600px) { h1 { font-size: 46px; } }
@@ -83,7 +86,7 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
   <div id="results" hidden>
     <section id="sec-top10" hidden>
       <h2>The Fans' Top 10</h2>
-      <p class="sub">How many voters put it in their Top 10.</p>
+      <p class="sub">Fans ranked their Top 10. A #1 vote is worth 10 points, #2 is worth 9, down to 1 point for #10.</p>
       <ol class="list" id="list-top10"></ol>
     </section>
 
@@ -153,9 +156,14 @@ const API_BASE = "https://catchphrase-vote.yeti-f3c.workers.dev";
 
     if (t.top10 && snap.top10 && snap.top10.length) {
       any = true;
-      var top = snap.top10.slice(0, 10), max10 = top[0].pct || 1;
+      // Ranked ballots: points (#1 = 10 ... #10 = 1). Older snapshots without points fall back to %.
+      var ranked = typeof snap.top10[0].points === 'number';
+      var top = snap.top10.slice(0, 10);
+      var max10 = (ranked ? top[0].points : top[0].pct) || 1;
       top.forEach(function (x, i) {
-        $('list-top10').appendChild(item(i + 1, x.id, x.pct + '%', x.pct / max10 * 100, "Greg's #" + x.id));
+        var val = ranked ? x.points + ' pts' : x.pct + '%';
+        var meta = (ranked ? 'On ' + x.pct + '% of ballots. ' : '') + "Greg's #" + x.id;
+        $('list-top10').appendChild(item(i + 1, x.id, val, (ranked ? x.points : x.pct) / max10 * 100, meta));
       });
       $('sec-top10').hidden = false;
     }

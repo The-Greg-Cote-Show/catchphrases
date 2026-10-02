@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Greg Cote's Top 75 Catchphrase Countdown: Your Turn</title>
 <meta name="description" content="Greg counted down his Top 75 catchphrases. Now it's your turn. Pick your Top 10, your Number 1, or redo the whole countdown.">
-<meta name="theme-color" content="#15130f">
+<meta name="theme-color" content="#061a22">
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,103 +13,124 @@
 <style>
 /* =====================================================================
    STYLE BLOCK: everything visual lives here. Restyle after the rebrand.
+   Miami Dolphins palette. To use the CoteCup palette instead, swap in:
+   --brand:#e8b84b; --brand-text:#f5d07a; --hot:#e05252; --bg:#080c14; --head:#0f1623;
+   --surface:#0f1623; --surface-2:#141d2e; --tint:rgba(232,184,75,.12); --line:#24304a;
+   --ink:#eef2f7; --ink-2:#b9c4d6; --ink-3:#7a8ba8; --on-brand:#0b0f17; --on-hot:#ffffff;
    ===================================================================== */
 :root {
-  --amber: #EF9F27;
-  --coral: #D85A30;
-  --bg: #15130f;
-  --surface: #211d18;
-  --surface-2: #2b261f;
-  --line: #3a332a;
-  --ink: #f4ede3;
-  --ink-2: #c9bfb1;
-  --ink-3: #8f8679;
-  --on-amber: #1a1208;
-  --good: #6cc68a;
+  --brand: #00A3AD;        /* Dolphins aqua (a touch brighter so it reads on dark) */
+  --brand-text: #2ec4cc;   /* aqua for headings on dark */
+  --hot: #FC4C02;          /* Dolphins orange */
+  --bg: #061a22;
+  --head: #0a2a35;
+  --surface: #0b2631;
+  --surface-2: #10313e;
+  --tint: rgba(0, 163, 173, .14);
+  --line: #1d4655;
+  --ink: #eef6f7;
+  --ink-2: #b4cdd2;
+  --ink-3: #7c9aa2;
+  --on-brand: #04161c;
+  --on-hot: #1a0800;
+  --good: #4fd18b;
   --radius: 12px;
   --font: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 19px; line-height: 1.35; min-height: 100vh; display: flex; flex-direction: column; }
-a { color: var(--amber); }
-button { font: inherit; color: inherit; }
+a { color: var(--brand-text); }
+button, select { font: inherit; color: inherit; }
 [hidden] { display: none !important; }
 .wrap { width: 100%; max-width: 720px; margin: 0 auto; padding: 0 16px; }
 
-.site-head { padding: 22px 0 10px; border-bottom: 3px solid var(--coral); background: linear-gradient(180deg, #221a12 0%, var(--bg) 100%); }
-.kicker { margin: 0; color: var(--coral); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 15px; }
+.site-head { padding: 22px 0 10px; border-bottom: 4px solid var(--hot); background: linear-gradient(180deg, var(--head) 0%, var(--bg) 100%); }
+.kicker { margin: 0; color: var(--hot); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 15px; }
 h1 { margin: 4px 0 6px; font-size: 34px; line-height: 1.02; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; }
-h1 .accent { color: var(--amber); display: block; }
-h2 { font-size: 30px; margin: 8px 0 4px; text-transform: uppercase; font-weight: 800; color: var(--amber); }
+h1 .accent { color: var(--brand-text); display: block; }
+h2 { font-size: 30px; line-height: 1.1; margin: 8px 0 4px; text-transform: uppercase; font-weight: 800; color: var(--brand-text); }
 .lede { font-size: 21px; color: var(--ink-2); margin: 16px 0; }
 .help { color: var(--ink-2); margin: 0 0 12px; }
 
-.banner { margin: 12px auto 0; padding: 12px 14px; border-radius: var(--radius); background: #3a1e14; border: 2px solid var(--coral); color: var(--ink); font-weight: 600; }
+.banner { margin: 12px auto 0; padding: 12px 14px; border-radius: var(--radius); background: #3a1606; border: 2px solid var(--hot); color: var(--ink); font-weight: 600; }
 
 main { flex: 1; padding-bottom: 24px; }
 
 .cards { display: grid; gap: 12px; }
 .card { display: block; text-decoration: none; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); padding: 16px; position: relative; }
-.card:hover, .card:focus-visible { border-color: var(--amber); }
-.card-title { display: block; font-size: 26px; font-weight: 800; text-transform: uppercase; color: var(--amber); }
+.card:hover, .card:focus-visible { border-color: var(--brand); }
+.card-title { display: block; font-size: 26px; font-weight: 800; text-transform: uppercase; color: var(--brand-text); }
 .card-sub { display: block; color: var(--ink-2); margin-top: 2px; padding-right: 80px; }
 .chip { position: absolute; top: 16px; right: 14px; font-size: 15px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: var(--surface-2); color: var(--ink-3); text-transform: uppercase; letter-spacing: .5px; }
 .chip.done { background: var(--good); color: #0f1f14; }
 .results-link { margin-top: 20px; color: var(--ink-3); }
 
-.back { display: inline-block; margin: 14px 0 4px; text-decoration: none; font-weight: 600; }
+/* "Back to home": same size as the section header */
+.back { display: inline-block; margin: 16px 0 6px; font-size: 30px; line-height: 1.1; font-weight: 800; text-transform: uppercase; text-decoration: none; color: var(--ink); }
+.back:hover, .back:focus-visible { color: var(--brand-text); }
+.back.small { font-size: 20px; text-transform: none; }
 
 .searchbar { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 8px 0; display: flex; gap: 8px; align-items: center; }
 .searchbar input { flex: 1; min-width: 0; font: inherit; font-size: 19px; padding: 10px 12px; border-radius: 10px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); }
-.searchbar input:focus { outline: none; border-color: var(--amber); }
+.searchbar input:focus { outline: none; border-color: var(--brand); }
 .linkish { background: none; border: 0; color: var(--ink-3); text-decoration: underline; cursor: pointer; padding: 8px 4px; white-space: nowrap; }
 
 .pick-list, .sort-list { list-style: none; margin: 0; padding: 0; }
 .pick { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: 11px 12px; margin: 0 0 8px; cursor: pointer; min-height: 52px; }
 .pick .num { color: var(--ink-3); font-weight: 600; min-width: 38px; font-variant-numeric: tabular-nums; }
 .pick .txt { flex: 1; }
-.pick .tick { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; font-weight: 800; color: var(--on-amber); }
-.pick[aria-pressed="true"] { border-color: var(--amber); background: #2e2414; }
-.pick[aria-pressed="true"] .tick { background: var(--amber); border-color: var(--amber); }
+.pick .tick { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; font-weight: 800; color: var(--on-brand); }
+.pick[aria-pressed="true"] { border-color: var(--brand); background: var(--tint); }
+.pick[aria-pressed="true"] .tick { background: var(--brand); border-color: var(--brand); }
 .pick[aria-pressed="true"] .tick::after { content: "\2713"; }
 .no-match { color: var(--ink-3); padding: 12px 4px; }
 
+/* Top 10 ranking: two columns (Greg's rank + phrase | your rank) in the old one-column width */
+.rank-head { display: grid; grid-template-columns: 1fr 96px; gap: 10px; padding: 0 8px 4px 12px; color: var(--ink-3); font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.rank-head span:last-child { text-align: center; }
+.rank-row { display: grid; grid-template-columns: 1fr 96px; gap: 10px; align-items: center; background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: 8px 8px 8px 12px; margin: 0 0 8px; min-height: 58px; }
+.rank-row .greg { display: block; font-size: 15px; font-weight: 700; color: var(--ink-3); }
+.rank-row .txt { display: block; overflow-wrap: anywhere; }
+.rank-row select { width: 96px; height: 48px; border-radius: 8px; border: 2px solid var(--line); background: var(--surface-2); color: var(--ink); font-size: 20px; font-weight: 800; text-align: center; text-align-last: center; padding: 0 4px; cursor: pointer; }
+.rank-row select:focus { outline: none; border-color: var(--brand); }
+.rank-row.ranked { border-color: var(--brand); background: var(--tint); }
+.rank-row.ranked select { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+
 .toolbar { display: flex; gap: 8px; margin: 4px 0 10px; flex-wrap: wrap; }
 .row { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: 6px 6px 6px 8px; margin: 0 0 6px; min-height: 54px; }
-.row .rank { min-width: 34px; font-size: 22px; font-weight: 800; color: var(--amber); text-align: right; font-variant-numeric: tabular-nums; }
+.row .rank { min-width: 34px; font-size: 22px; font-weight: 800; color: var(--brand-text); text-align: right; font-variant-numeric: tabular-nums; }
 .row .handle { cursor: grab; color: var(--ink-3); font-size: 26px; padding: 10px 8px; margin: -6px 0; touch-action: none; user-select: none; -webkit-user-select: none; }
 .row .txt { flex: 1; min-width: 0; }
 .row .greg { display: block; font-size: 14px; color: var(--ink-3); }
 .row .moves { display: flex; gap: 4px; flex: none; }
 .mv { width: 42px; height: 42px; border-radius: 8px; border: 2px solid var(--line); background: var(--surface-2); cursor: pointer; font-size: 16px; color: var(--ink-2); }
-.mv:active { border-color: var(--amber); color: var(--amber); }
+.mv:active { border-color: var(--brand); color: var(--brand-text); }
 .mv:disabled { opacity: .3; }
 .row.sortable-ghost { opacity: .4; }
-.row.sortable-chosen { border-color: var(--amber); }
-.row.flash { border-color: var(--amber); }
+.row.sortable-chosen { border-color: var(--brand); }
+.row.flash { border-color: var(--brand); }
 
-.actionbar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(21,19,15,0) 0%, var(--bg) 22%); margin-top: 8px; }
+.actionbar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(6,26,34,0) 0%, var(--bg) 22%); margin-top: 8px; }
 .counter { font-size: 22px; font-weight: 800; color: var(--ink); }
-.counter.full { color: var(--amber); }
-.counter.warn { color: var(--coral); }
+.counter.full { color: var(--brand-text); }
+.counter.warn { color: var(--hot); }
 .pickname { flex: 1; min-width: 0; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .btn { display: inline-block; text-decoration: none; text-align: center; border-radius: 10px; padding: 12px 18px; font-weight: 800; font-size: 20px; text-transform: uppercase; letter-spacing: .5px; border: 2px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; }
-.btn.primary { background: var(--amber); border-color: var(--amber); color: var(--on-amber); }
+.btn.primary { background: var(--hot); border-color: var(--hot); color: var(--on-hot); }
 .btn.primary:disabled { background: var(--surface-2); border-color: var(--line); color: var(--ink-3); cursor: not-allowed; }
 .btn.ghost { background: transparent; }
 .btn.big { width: 100%; padding: 16px; font-size: 24px; }
 
 .confirm-list { margin: 10px 0 16px; padding: 12px 12px 12px 48px; background: var(--surface); border-radius: var(--radius); border: 2px solid var(--line); }
+.confirm-list.plain { padding-left: 16px; list-style: none; }
 .confirm-list li { margin: 4px 0; }
 .confirm-list.long { max-height: 50vh; overflow-y: auto; }
 .turnstile-box { min-height: 70px; margin: 8px 0; }
-.msg { min-height: 1.4em; color: var(--coral); font-weight: 600; }
+.msg { min-height: 1.4em; color: var(--hot); font-weight: 600; }
 .confirm-actions { display: grid; gap: 10px; margin-top: 8px; }
 .still-open { margin: 16px 0; }
-
-footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px; padding: 16px 0 calc(16px + env(safe-area-inset-bottom)); }
 
 @media (min-width: 600px) {
   h1 { font-size: 46px; }
@@ -137,7 +158,7 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
     <div class="cards">
       <a class="card" href="#top10">
         <span class="card-title">Your Top 10</span>
-        <span class="card-sub">Pick your 10 favorites. No ranking, just picks.</span>
+        <span class="card-sub">Rank your 10 favorites, 1 through 10.</span>
         <span class="chip" data-chip="top10">Not yet</span>
       </a>
       <a class="card" href="#number1">
@@ -156,13 +177,14 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
 
   <!-- TOP 10 -->
   <section id="view-top10" class="view" hidden>
-    <a class="back" href="#">&larr; All three</a>
+    <a class="back" href="#">&larr; Back to home</a>
     <h2>Your Top 10</h2>
-    <p class="help">Tap 10 catchphrases. Order doesn't matter.</p>
+    <p class="help">Find your 10 favorites and give each one a number. 1 is the best. Each number can only go to one catchphrase.</p>
     <div class="searchbar">
       <input type="search" id="search-top10" placeholder="Search the 75" aria-label="Search catchphrases" autocomplete="off">
-      <button type="button" class="linkish" id="clear-top10">Clear picks</button>
+      <button type="button" class="linkish" id="clear-top10">Clear ranks</button>
     </div>
+    <div class="rank-head" aria-hidden="true"><span>Greg's rank</span><span>Your rank</span></div>
     <ul class="pick-list" id="list-top10"></ul>
     <p class="no-match" id="nomatch-top10" hidden>Nothing matches that.</p>
     <div class="actionbar">
@@ -173,7 +195,7 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
 
   <!-- NUMBER 1 -->
   <section id="view-number1" class="view" hidden>
-    <a class="back" href="#">&larr; All three</a>
+    <a class="back" href="#">&larr; Back to home</a>
     <h2>Your Number 1</h2>
     <p class="help">Tap the one you love most.</p>
     <div class="searchbar">
@@ -189,7 +211,7 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
 
   <!-- REARRANGE -->
   <section id="view-rearrange" class="view" hidden>
-    <a class="back" href="#">&larr; All three</a>
+    <a class="back" href="#">&larr; Back to home</a>
     <h2>Redo the Countdown</h2>
     <p class="help">Top of the list is #75, bottom is #1, just like Greg's countdown. Drag the &#8801; handle or use the arrows.</p>
     <div class="toolbar">
@@ -204,7 +226,7 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
 
   <!-- CONFIRM -->
   <section id="view-confirm" class="view" hidden>
-    <a class="back" id="confirm-back" href="#">&larr; Go back and change</a>
+    <a class="back small" id="confirm-back" href="#">&larr; Go back and change</a>
     <h2 id="confirm-title">Lock it in?</h2>
     <p class="help">Once you send it, that's final. No do-overs.</p>
     <ol id="confirm-list" class="confirm-list"></ol>
@@ -221,15 +243,10 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
     <h2 id="done-title">You're in.</h2>
     <p id="done-msg">Thanks for playing.</p>
     <div class="still-open" id="still-open"></div>
-    <a class="btn primary" href="#">Back to all three</a>
+    <a class="btn primary" href="#">Back to home</a>
   </section>
 </main>
 
-<footer>
-  <div class="wrap">
-    <p>One vote per exercise per connection. We store a scrambled version of your IP address to stop robo-voting, not the address itself.</p>
-  </div>
-</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.7/Sortable.min.js" integrity="sha512-ri8dokds012Oxz+iFzMs4KNJXVc+h7J1zq6unM1NTtzBLj4jD1R5BWiK6QycK0TdSdkt7zYcIcv6sUPhmYkbdQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 <script>
@@ -252,13 +269,15 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   };
   var DRAFT_KEY = 'gcs75-draft-v1';
   var DONE_KEY = 'gcs75-done-v1';
+  var DEVICE_KEY = 'gcs75-device-v1';
 
   var phrases = [];          // [{id, text}] in Greg's order, 75 first
   var byId = {};
   var status = null;         // from /api/status
   var done = loadLocal(DONE_KEY) || {};
   var draft = loadLocal(DRAFT_KEY) || {};
-  var top10 = new Set(Array.isArray(draft.top10) ? draft.top10 : []);
+  var ranks = cleanRanks(draft.top10r);   // { id: 1..10 } for the ranked Top 10
+  var device = deviceId();
   var number1 = typeof draft.number1 === 'number' ? draft.number1 : null;
   var confirmEx = null;
   var widgetId = null;
@@ -268,8 +287,31 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   function $(id) { return document.getElementById(id); }
   function loadLocal(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
   function saveLocal(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  // Random id for this browser, used for "one vote per device". Never tied to the person.
+  function deviceId() {
+    var d = loadLocal(DEVICE_KEY);
+    if (typeof d === 'string' && /^[A-Za-z0-9-]{16,64}$/.test(d)) return d;
+    if (window.crypto && crypto.randomUUID) d = crypto.randomUUID();
+    else {
+      var a = new Uint8Array(16);
+      (window.crypto || window.msCrypto).getRandomValues(a);
+      d = Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+    }
+    saveLocal(DEVICE_KEY, d);
+    return d;
+  }
+  // Keeps only valid { id: rank } pairs with each rank 1..10 used once.
+  function cleanRanks(obj) {
+    var out = {}, used = {};
+    if (!obj || typeof obj !== 'object') return out;
+    Object.keys(obj).forEach(function (k) {
+      var r = Number(obj[k]), id = Number(k);
+      if (id >= 1 && id <= 75 && r >= 1 && r <= 10 && Math.floor(r) === r && !used[r]) { out[id] = r; used[r] = 1; }
+    });
+    return out;
+  }
   function saveDraft() {
-    draft.top10 = Array.from(top10);
+    draft.top10r = ranks;
     draft.number1 = number1;
     draft.rearrange = currentOrder();
     saveLocal(DRAFT_KEY, draft);
@@ -300,7 +342,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
       var b = e.target.closest('.pick');
       if (!b) return;
       var id = Number(b.dataset.id);
-      if (ex === 'top10') toggleTop10(id); else pickNumber1(id);
+      pickNumber1(id);
     });
     var search = $('search-' + ex);
     search.addEventListener('input', function () { filterList(ex, search.value); });
@@ -317,30 +359,77 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     $('nomatch-' + ex).hidden = shown > 0;
   }
 
-  function toggleTop10(id) {
-    if (top10.has(id)) top10.delete(id);
-    else if (top10.size >= 10) { flashCounter(); return; }
-    else top10.add(id);
-    saveDraft();
-    paintTop10();
+  // ---------- top 10 (ranked) ----------
+  // ranks: { catchphraseId: 1..10 }. A number can only belong to one catchphrase:
+  // numbers already used elsewhere are disabled in every other dropdown.
+  function buildRankList() {
+    var ul = $('list-top10');
+    ul.textContent = '';
+    phrases.forEach(function (p) {
+      var li = document.createElement('li');
+      li.className = 'rank-row';
+      li.dataset.search = norm(p.text) + ' ' + p.id;
+      li.dataset.id = p.id;
+      var who = document.createElement('label');
+      who.setAttribute('for', 'rank-' + p.id);
+      var greg = document.createElement('span'); greg.className = 'greg'; greg.textContent = "Greg's #" + p.id;
+      var txt = document.createElement('span'); txt.className = 'txt'; txt.textContent = p.text;
+      who.appendChild(greg); who.appendChild(txt);
+      var sel = document.createElement('select');
+      sel.id = 'rank-' + p.id;
+      sel.dataset.id = p.id;
+      sel.setAttribute('aria-label', 'Your rank for ' + p.text);
+      var none = document.createElement('option'); none.value = ''; none.textContent = 'Rank'; sel.appendChild(none);
+      for (var r = 1; r <= 10; r++) { var o = document.createElement('option'); o.value = String(r); o.textContent = String(r); sel.appendChild(o); }
+      li.appendChild(who); li.appendChild(sel);
+      ul.appendChild(li);
+    });
+    ul.addEventListener('change', function (e) {
+      var sel = e.target.closest('select');
+      if (!sel) return;
+      var id = Number(sel.dataset.id), v = sel.value ? Number(sel.value) : null;
+      var owner = v ? rankOwner(v) : null;
+      if (owner && owner !== id) { paintTop10(); return; } // taken: refuse (dropdowns normally block this)
+      if (v) ranks[id] = v; else delete ranks[id];
+      saveDraft();
+      paintTop10();
+    });
+    var search = $('search-top10');
+    search.addEventListener('input', function () { filterList('top10', search.value); });
   }
-  function flashCounter() {
-    var c = $('count-top10');
-    c.textContent = "That's 10. Unpick one first.";
-    c.className = 'counter warn';
-    clearTimeout(flashCounter.t);
-    flashCounter.t = setTimeout(paintTop10, 1600);
+  function rankOwner(r) {
+    for (var k in ranks) if (ranks[k] === r) return Number(k);
+    return null;
+  }
+  function rankedIds() {
+    var out = [];
+    for (var r = 1; r <= 10; r++) { var id = rankOwner(r); if (id) out.push(id); }
+    return out;
   }
   function paintTop10() {
-    var btns = $('list-top10').querySelectorAll('.pick');
-    for (var i = 0; i < btns.length; i++) btns[i].setAttribute('aria-pressed', top10.has(Number(btns[i].dataset.id)) ? 'true' : 'false');
+    var owner = {};
+    Object.keys(ranks).forEach(function (k) { owner[ranks[k]] = Number(k); });
+    var rows = $('list-top10').children;
+    for (var i = 0; i < rows.length; i++) {
+      var id = Number(rows[i].dataset.id), mine = ranks[id] || null;
+      var sel = rows[i].querySelector('select');
+      sel.value = mine ? String(mine) : '';
+      for (var j = 1; j < sel.options.length; j++) {
+        var r = j, takenByOther = owner[r] && owner[r] !== id;
+        sel.options[j].disabled = !!takenByOther;
+        sel.options[j].textContent = takenByOther ? r + ' (taken)' : String(r);
+      }
+      rows[i].classList.toggle('ranked', !!mine);
+    }
+    var n = Object.keys(ranks).length;
     var c = $('count-top10');
-    c.textContent = top10.size + ' of 10';
-    c.className = 'counter' + (top10.size === 10 ? ' full' : '');
-    $('review-top10').disabled = top10.size !== 10;
+    c.textContent = n + ' of 10 ranked';
+    c.className = 'counter' + (n === 10 ? ' full' : '');
+    $('review-top10').disabled = n !== 10;
   }
 
   function pickNumber1(id) {
+
     number1 = number1 === id ? null : id;
     saveDraft();
     paintNumber1();
@@ -452,7 +541,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   }
 
   function idsFor(ex) {
-    if (ex === 'top10') return Array.from(top10);
+    if (ex === 'top10') return rankedIds();
     if (ex === 'number1') return number1 ? [number1] : [];
     return currentOrder();
   }
@@ -489,9 +578,8 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     ol.textContent = '';
     ol.className = 'confirm-list' + (ex === 'rearrange' ? ' long' : '');
     var ids = idsFor(ex);
-    if (ex === 'top10') ids = ids.slice().sort(function (a, b) { return a - b; });
     if (ex === 'rearrange') ol.setAttribute('reversed', ''); else ol.removeAttribute('reversed');
-    if (ex === 'number1') ol.style.listStyle = 'none'; else ol.style.listStyle = '';
+    if (ex === 'number1') ol.classList.add('plain');
     ids.forEach(function (id) {
       var li = document.createElement('li');
       li.textContent = byId[id];
@@ -540,7 +628,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     fetch(API + '/api/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ exercise: ex, ids: idsFor(ex), token: token })
+      body: JSON.stringify({ exercise: ex, ids: idsFor(ex), token: token, device: device })
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) { return { status: r.status, body: j }; });
     }).then(function (res) {
@@ -571,10 +659,10 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   function markDone(ex) {
     done[ex] = true;
     saveLocal(DONE_KEY, done);
-    if (ex === 'top10') top10.clear();
+    if (ex === 'top10') ranks = {};
     if (ex === 'number1') number1 = null;
     if (ex === 'rearrange') delete draft.rearrange;
-    draft.top10 = Array.from(top10);
+    draft.top10r = ranks;
     draft.number1 = number1;
     saveLocal(DRAFT_KEY, draft);
   }
@@ -605,7 +693,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   // ---------- boot ----------
   function loadStatus() {
     if (API.indexOf('REPLACE-WITH') >= 0) { showBanner("Voting isn't hooked up yet. Check back soon."); return; }
-    fetch(API + '/api/status', { cache: 'no-store' })
+    fetch(API + '/api/status?d=' + encodeURIComponent(device), { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(function (s) {
         if (!s || !s.ok) throw new Error('bad status');
@@ -626,15 +714,15 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     .then(function (list) {
       phrases = list.slice().sort(function (a, b) { return b.id - a.id; });
       phrases.forEach(function (p) { byId[p.id] = p.text; });
-      top10.forEach(function (id) { if (!byId[id]) top10.delete(id); });
+      Object.keys(ranks).forEach(function (id) { if (!byId[id]) delete ranks[id]; });
       if (number1 && !byId[number1]) number1 = null;
-      buildPickList('top10');
+      buildRankList();
       buildPickList('number1');
       buildSortList(isPermutation(draft.rearrange) ? draft.rearrange : gregOrder());
       initSortable();
       paintTop10();
       paintNumber1();
-      $('clear-top10').addEventListener('click', function () { if (top10.size && confirm('Clear all your picks?')) { top10.clear(); saveDraft(); paintTop10(); } });
+      $('clear-top10').addEventListener('click', function () { if (Object.keys(ranks).length && confirm('Clear all your rankings?')) { ranks = {}; saveDraft(); paintTop10(); } });
       $('review-top10').addEventListener('click', function () { location.hash = '#confirm-top10'; });
       $('review-number1').addEventListener('click', function () { location.hash = '#confirm-number1'; });
       $('review-rearrange').addEventListener('click', function () { location.hash = '#confirm-rearrange'; });

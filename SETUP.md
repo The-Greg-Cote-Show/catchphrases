@@ -122,7 +122,7 @@ Secrets stay put when GitHub redeploys the Worker.
 
 ## Step 11. Check SITE_URL
 
-`wrangler.toml` has `SITE_URL = "https://catchphrases.thegregcoteshow.com"`. The admin dashboard and Preview load the catchphrase text and results.html from there. If you want to test before the custom domain works, change it to `https://the-greg-cote-show.github.io/catchphrases` and commit. Change it back once DNS works.
+`wrangler.toml` has `SITE_URL = "https://the-greg-cote-show.github.io/catchphrases"` for now. The admin dashboard and Preview load the catchphrase text and results.html from there. Once the custom domain works, change it to `https://catchphrases.thegregcoteshow.com` and commit. Keep the quotes that are already in the file; change only the text between them.
 
 ## Step 12. Open the admin dashboard
 
@@ -135,10 +135,14 @@ Don't share screenshots that show the address bar. The key is in the URL.
 ## Step 13. Test it live (from your phone)
 
 1. Open `https://catchphrases.thegregcoteshow.com` on your phone and do the Top 10.
-2. Open the site again on the same Wi-Fi in a private/incognito tab (so the phone has no memory of your vote). The Top 10 card should still say **Done**, and tapping it should say "Your Top 10 is already in." That proves the server remembers the connection, not just your browser. The database also refuses a second row on its own; it returns "Looks like a vote from this connection is already in for this one."
+2. Reload the page in the same browser. The Top 10 card should say **Done**, and tapping it should say "Your Top 10 is already in." The server remembers your device. A different phone on the same Wi-Fi CAN vote. That's on purpose, so families and offices aren't blocked. One connection can send at most `MAX_PER_CONNECTION` votes per exercise (set in wrangler.toml, default 10).
 3. Open `/admin` with no key, then with a wrong key. Both should say "Wrong or missing key."
 4. Open `https://catchphrases.thegregcoteshow.com/results.html`. It should say "Results coming soon".
 5. Open `https://catchphrase-vote.SOMETHING.workers.dev/api/results`. It should say `"public":false` and "Results coming soon", with no numbers.
+
+## Before launch: clear your test votes
+
+In the dashboard, click **Clear all votes**. When it asks, type `CLEAR` (capital letters, no quotes) and click OK. Every vote and every saved snapshot is removed, and results go back to private. Click **Download CSV** first if you want a copy.
 
 ## Results day
 

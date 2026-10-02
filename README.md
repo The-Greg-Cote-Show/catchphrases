@@ -2,11 +2,11 @@
 
 Fan voting for The Greg Cote Show. Greg counted down his Top 75 catchphrases. Fans get three ways to weigh in:
 
-1. **Your Top 10**: pick 10 of the 75.
+1. **Your Top 10**: rank your 10 favorites, 1 through 10.
 2. **Your Number 1**: pick one.
 3. **Redo the Countdown**: reorder all 75.
 
-One vote per exercise per connection. Results stay private until the admin clicks "Go live".
+One vote per exercise per device, with a cap on how many votes one connection (one Wi-Fi, one carrier IP) can send, plus a Cloudflare Turnstile check on every vote. Results stay private until the admin clicks "Go live".
 
 ## How it's built
 
