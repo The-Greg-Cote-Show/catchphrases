@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Greg Cote's Top 75 Catchphrase Countdown: Your Turn</title>
+<meta name="description" content="Greg counted down his Top 75 catchphrases. Now it's your turn. Pick your Top 10, your Number 1, or redo the whole countdown.">
+<meta name="theme-color" content="#15130f">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   STYLE BLOCK: everything visual lives here. Restyle after the rebrand.
+   ===================================================================== */
+:root {
+  --amber: #EF9F27;
+  --coral: #D85A30;
+  --bg: #15130f;
+  --surface: #211d18;
+  --surface-2: #2b261f;
+  --line: #3a332a;
+  --ink: #f4ede3;
+  --ink-2: #c9bfb1;
+  --ink-3: #8f8679;
+  --on-amber: #1a1208;
+  --good: #6cc68a;
+  --radius: 12px;
+  --font: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 19px; line-height: 1.35; min-height: 100vh; display: flex; flex-direction: column; }
+a { color: var(--amber); }
+button { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+.wrap { width: 100%; max-width: 720px; margin: 0 auto; padding: 0 16px; }
+
+.site-head { padding: 22px 0 10px; border-bottom: 3px solid var(--coral); background: linear-gradient(180deg, #221a12 0%, var(--bg) 100%); }
+.kicker { margin: 0; color: var(--coral); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 15px; }
+h1 { margin: 4px 0 6px; font-size: 34px; line-height: 1.02; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; }
+h1 .accent { color: var(--amber); display: block; }
+h2 { font-size: 30px; margin: 8px 0 4px; text-transform: uppercase; font-weight: 800; color: var(--amber); }
+.lede { font-size: 21px; color: var(--ink-2); margin: 16px 0; }
+.help { color: var(--ink-2); margin: 0 0 12px; }
+
+.banner { margin: 12px auto 0; padding: 12px 14px; border-radius: var(--radius); background: #3a1e14; border: 2px solid var(--coral); color: var(--ink); font-weight: 600; }
+
+main { flex: 1; padding-bottom: 24px; }
+
+.cards { display: grid; gap: 12px; }
+.card { display: block; text-decoration: none; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); padding: 16px; position: relative; }
+.card:hover, .card:focus-visible { border-color: var(--amber); }
+.card-title { display: block; font-size: 26px; font-weight: 800; text-transform: uppercase; color: var(--amber); }
+.card-sub { display: block; color: var(--ink-2); margin-top: 2px; padding-right: 80px; }
+.chip { position: absolute; top: 16px; right: 14px; font-size: 15px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: var(--surface-2); color: var(--ink-3); text-transform: uppercase; letter-spacing: .5px; }
+.chip.done { background: var(--good); color: #0f1f14; }
+.results-link { margin-top: 20px; color: var(--ink-3); }
+
+.back { display: inline-block; margin: 14px 0 4px; text-decoration: none; font-weight: 600; }
+
+.searchbar { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 8px 0; display: flex; gap: 8px; align-items: center; }
+.searchbar input { flex: 1; min-width: 0; font: inherit; font-size: 19px; padding: 10px 12px; border-radius: 10px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); }
+.searchbar input:focus { outline: none; border-color: var(--amber); }
+.linkish { background: none; border: 0; color: var(--ink-3); text-decoration: underline; cursor: pointer; padding: 8px 4px; white-space: nowrap; }
+
+.pick-list, .sort-list { list-style: none; margin: 0; padding: 0; }
+.pick { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: 11px 12px; margin: 0 0 8px; cursor: pointer; min-height: 52px; }
+.pick .num { color: var(--ink-3); font-weight: 600; min-width: 38px; font-variant-numeric: tabular-nums; }
+.pick .txt { flex: 1; }
+.pick .tick { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; font-weight: 800; color: var(--on-amber); }
+.pick[aria-pressed="true"] { border-color: var(--amber); background: #2e2414; }
+.pick[aria-pressed="true"] .tick { background: var(--amber); border-color: var(--amber); }
+.pick[aria-pressed="true"] .tick::after { content: "\2713"; }
+.no-match { color: var(--ink-3); padding: 12px 4px; }
+
+.toolbar { display: flex; gap: 8px; margin: 4px 0 10px; flex-wrap: wrap; }
+.row { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: 6px 6px 6px 8px; margin: 0 0 6px; min-height: 54px; }
+.row .rank { min-width: 34px; font-size: 22px; font-weight: 800; color: var(--amber); text-align: right; font-variant-numeric: tabular-nums; }
+.row .handle { cursor: grab; color: var(--ink-3); font-size: 26px; padding: 10px 8px; margin: -6px 0; touch-action: none; user-select: none; -webkit-user-select: none; }
+.row .txt { flex: 1; min-width: 0; }
+.row .greg { display: block; font-size: 14px; color: var(--ink-3); }
+.row .moves { display: flex; gap: 4px; flex: none; }
+.mv { width: 42px; height: 42px; border-radius: 8px; border: 2px solid var(--line); background: var(--surface-2); cursor: pointer; font-size: 16px; color: var(--ink-2); }
+.mv:active { border-color: var(--amber); color: var(--amber); }
+.mv:disabled { opacity: .3; }
+.row.sortable-ghost { opacity: .4; }
+.row.sortable-chosen { border-color: var(--amber); }
+.row.flash { border-color: var(--amber); }
+
+.actionbar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(21,19,15,0) 0%, var(--bg) 22%); margin-top: 8px; }
+.counter { font-size: 22px; font-weight: 800; color: var(--ink); }
+.counter.full { color: var(--amber); }
+.counter.warn { color: var(--coral); }
+.pickname { flex: 1; min-width: 0; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.btn { display: inline-block; text-decoration: none; text-align: center; border-radius: 10px; padding: 12px 18px; font-weight: 800; font-size: 20px; text-transform: uppercase; letter-spacing: .5px; border: 2px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--amber); border-color: var(--amber); color: var(--on-amber); }
+.btn.primary:disabled { background: var(--surface-2); border-color: var(--line); color: var(--ink-3); cursor: not-allowed; }
+.btn.ghost { background: transparent; }
+.btn.big { width: 100%; padding: 16px; font-size: 24px; }
+
+.confirm-list { margin: 10px 0 16px; padding: 12px 12px 12px 48px; background: var(--surface); border-radius: var(--radius); border: 2px solid var(--line); }
+.confirm-list li { margin: 4px 0; }
+.confirm-list.long { max-height: 50vh; overflow-y: auto; }
+.turnstile-box { min-height: 70px; margin: 8px 0; }
+.msg { min-height: 1.4em; color: var(--coral); font-weight: 600; }
+.confirm-actions { display: grid; gap: 10px; margin-top: 8px; }
+.still-open { margin: 16px 0; }
+
+footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px; padding: 16px 0 calc(16px + env(safe-area-inset-bottom)); }
+
+@media (min-width: 600px) {
+  h1 { font-size: 46px; }
+  .cards { grid-template-columns: 1fr 1fr 1fr; }
+  .card-sub { padding-right: 0; margin-top: 6px; }
+  .chip { position: static; display: inline-block; margin-top: 10px; }
+}
+/* ===================== END STYLE BLOCK ===================== */
+</style>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <p class="kicker">The Greg Cote Show</p>
+    <h1>Greg Cote's Top 75 Catchphrase Countdown: <span class="accent">Your Turn</span></h1>
+  </div>
+</header>
+
+<div class="wrap"><div id="banner" class="banner" role="status" hidden></div></div>
+
+<main class="wrap">
+  <!-- HOME -->
+  <section id="view-home" class="view">
+    <p class="lede">Greg counted down his Top 75. Now you get a say. Do one, two, or all three.</p>
+    <div class="cards">
+      <a class="card" href="#top10">
+        <span class="card-title">Your Top 10</span>
+        <span class="card-sub">Pick your 10 favorites. No ranking, just picks.</span>
+        <span class="chip" data-chip="top10">Not yet</span>
+      </a>
+      <a class="card" href="#number1">
+        <span class="card-title">Your Number 1</span>
+        <span class="card-sub">Just one. The best of the bunch.</span>
+        <span class="chip" data-chip="number1">Not yet</span>
+      </a>
+      <a class="card" href="#rearrange">
+        <span class="card-title">Redo the Countdown</span>
+        <span class="card-sub">Start with Greg's order and fix what he got wrong.</span>
+        <span class="chip" data-chip="rearrange">Not yet</span>
+      </a>
+    </div>
+    <p class="results-link">Results go up on the <a href="results.html">results page</a> once we've crunched the numbers.</p>
+  </section>
+
+  <!-- TOP 10 -->
+  <section id="view-top10" class="view" hidden>
+    <a class="back" href="#">&larr; All three</a>
+    <h2>Your Top 10</h2>
+    <p class="help">Tap 10 catchphrases. Order doesn't matter.</p>
+    <div class="searchbar">
+      <input type="search" id="search-top10" placeholder="Search the 75" aria-label="Search catchphrases" autocomplete="off">
+      <button type="button" class="linkish" id="clear-top10">Clear picks</button>
+    </div>
+    <ul class="pick-list" id="list-top10"></ul>
+    <p class="no-match" id="nomatch-top10" hidden>Nothing matches that.</p>
+    <div class="actionbar">
+      <span class="counter" id="count-top10" aria-live="polite">0 of 10</span>
+      <button type="button" class="btn primary" id="review-top10" disabled>Review picks</button>
+    </div>
+  </section>
+
+  <!-- NUMBER 1 -->
+  <section id="view-number1" class="view" hidden>
+    <a class="back" href="#">&larr; All three</a>
+    <h2>Your Number 1</h2>
+    <p class="help">Tap the one you love most.</p>
+    <div class="searchbar">
+      <input type="search" id="search-number1" placeholder="Search the 75" aria-label="Search catchphrases" autocomplete="off">
+    </div>
+    <ul class="pick-list" id="list-number1"></ul>
+    <p class="no-match" id="nomatch-number1" hidden>Nothing matches that.</p>
+    <div class="actionbar">
+      <span class="pickname" id="pickname-number1" aria-live="polite">No pick yet</span>
+      <button type="button" class="btn primary" id="review-number1" disabled>Review pick</button>
+    </div>
+  </section>
+
+  <!-- REARRANGE -->
+  <section id="view-rearrange" class="view" hidden>
+    <a class="back" href="#">&larr; All three</a>
+    <h2>Redo the Countdown</h2>
+    <p class="help">Top of the list is #75, bottom is #1, just like Greg's countdown. Drag the &#8801; handle or use the arrows.</p>
+    <div class="toolbar">
+      <button type="button" class="btn ghost" id="reset-rearrange">Reset to Greg's order</button>
+    </div>
+    <ol class="sort-list" id="list-rearrange"></ol>
+    <div class="actionbar">
+      <span class="pickname">Your #1 is at the bottom.</span>
+      <button type="button" class="btn primary" id="review-rearrange">Review my order</button>
+    </div>
+  </section>
+
+  <!-- CONFIRM -->
+  <section id="view-confirm" class="view" hidden>
+    <a class="back" id="confirm-back" href="#">&larr; Go back and change</a>
+    <h2 id="confirm-title">Lock it in?</h2>
+    <p class="help">Once you send it, that's final. No do-overs.</p>
+    <ol id="confirm-list" class="confirm-list"></ol>
+    <div id="turnstile-box" class="turnstile-box"></div>
+    <p id="confirm-msg" class="msg" role="alert"></p>
+    <div class="confirm-actions">
+      <button type="button" class="btn primary big" id="submit-btn" disabled>Lock it in</button>
+      <a class="btn ghost" id="confirm-back2" href="#">Go back</a>
+    </div>
+  </section>
+
+  <!-- DONE -->
+  <section id="view-done" class="view" hidden>
+    <h2 id="done-title">You're in.</h2>
+    <p id="done-msg">Thanks for playing.</p>
+    <div class="still-open" id="still-open"></div>
+    <a class="btn primary" href="#">Back to all three</a>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>One vote per exercise per connection. We store a scrambled version of your IP address to stop robo-voting, not the address itself.</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.7/Sortable.min.js" integrity="sha512-ri8dokds012Oxz+iFzMs4KNJXVc+h7J1zq6unM1NTtzBLj4jD1R5BWiK6QycK0TdSdkt7zYcIcv6sUPhmYkbdQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script>
+// ===== CONFIG: fill_api_base.ps1 rewrites API_BASE. Paste the Turnstile SITE key (public, not the secret). =====
+const API_BASE = "https://catchphrase-vote.yeti-f3c.workers.dev";
+const TURNSTILE_SITE_KEY = "REPLACE-WITH-TURNSTILE-SITE-KEY";
+// ===== END CONFIG =====
+
+window.onTurnstileReady = function () { if (window.App) window.App.turnstileReady(); };
+</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileReady" async defer></script>
+<script>
+(function () {
+  'use strict';
+  var API = API_BASE.replace(/\/+$/, '');
+  var EX = {
+    top10: { name: 'Your Top 10', short: 'Top 10' },
+    number1: { name: 'Your Number 1', short: 'Number 1' },
+    rearrange: { name: 'Redo the Countdown', short: 'Redo the Countdown' }
+  };
+  var DRAFT_KEY = 'gcs75-draft-v1';
+  var DONE_KEY = 'gcs75-done-v1';
+
+  var phrases = [];          // [{id, text}] in Greg's order, 75 first
+  var byId = {};
+  var status = null;         // from /api/status
+  var done = loadLocal(DONE_KEY) || {};
+  var draft = loadLocal(DRAFT_KEY) || {};
+  var top10 = new Set(Array.isArray(draft.top10) ? draft.top10 : []);
+  var number1 = typeof draft.number1 === 'number' ? draft.number1 : null;
+  var confirmEx = null;
+  var widgetId = null;
+  var token = null;
+  var sending = false;
+
+  function $(id) { return document.getElementById(id); }
+  function loadLocal(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  function saveLocal(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function saveDraft() {
+    draft.top10 = Array.from(top10);
+    draft.number1 = number1;
+    draft.rearrange = currentOrder();
+    saveLocal(DRAFT_KEY, draft);
+  }
+  function norm(s) { return String(s).toLowerCase().replace(/[^a-z0-9 ]+/g, '').replace(/\s+/g, ' ').trim(); }
+  function showBanner(text) { var b = $('banner'); b.textContent = text; b.hidden = !text; }
+
+  // ---------- lists ----------
+  function buildPickList(ex) {
+    var ul = $('list-' + ex);
+    ul.textContent = '';
+    phrases.forEach(function (p) {
+      var li = document.createElement('li');
+      li.dataset.search = norm(p.text) + ' ' + p.id;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pick';
+      b.dataset.id = p.id;
+      b.setAttribute('aria-pressed', 'false');
+      var num = document.createElement('span'); num.className = 'num'; num.textContent = '#' + p.id;
+      var txt = document.createElement('span'); txt.className = 'txt'; txt.textContent = p.text;
+      var tick = document.createElement('span'); tick.className = 'tick'; tick.setAttribute('aria-hidden', 'true');
+      b.appendChild(num); b.appendChild(txt); b.appendChild(tick);
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+    ul.addEventListener('click', function (e) {
+      var b = e.target.closest('.pick');
+      if (!b) return;
+      var id = Number(b.dataset.id);
+      if (ex === 'top10') toggleTop10(id); else pickNumber1(id);
+    });
+    var search = $('search-' + ex);
+    search.addEventListener('input', function () { filterList(ex, search.value); });
+  }
+
+  function filterList(ex, q) {
+    var n = norm(q), shown = 0;
+    var items = $('list-' + ex).children;
+    for (var i = 0; i < items.length; i++) {
+      var hit = !n || items[i].dataset.search.indexOf(n) >= 0;
+      items[i].hidden = !hit;
+      if (hit) shown++;
+    }
+    $('nomatch-' + ex).hidden = shown > 0;
+  }
+
+  function toggleTop10(id) {
+    if (top10.has(id)) top10.delete(id);
+    else if (top10.size >= 10) { flashCounter(); return; }
+    else top10.add(id);
+    saveDraft();
+    paintTop10();
+  }
+  function flashCounter() {
+    var c = $('count-top10');
+    c.textContent = "That's 10. Unpick one first.";
+    c.className = 'counter warn';
+    clearTimeout(flashCounter.t);
+    flashCounter.t = setTimeout(paintTop10, 1600);
+  }
+  function paintTop10() {
+    var btns = $('list-top10').querySelectorAll('.pick');
+    for (var i = 0; i < btns.length; i++) btns[i].setAttribute('aria-pressed', top10.has(Number(btns[i].dataset.id)) ? 'true' : 'false');
+    var c = $('count-top10');
+    c.textContent = top10.size + ' of 10';
+    c.className = 'counter' + (top10.size === 10 ? ' full' : '');
+    $('review-top10').disabled = top10.size !== 10;
+  }
+
+  function pickNumber1(id) {
+    number1 = number1 === id ? null : id;
+    saveDraft();
+    paintNumber1();
+  }
+  function paintNumber1() {
+    var btns = $('list-number1').querySelectorAll('.pick');
+    for (var i = 0; i < btns.length; i++) btns[i].setAttribute('aria-pressed', Number(btns[i].dataset.id) === number1 ? 'true' : 'false');
+    $('pickname-number1').textContent = number1 ? byId[number1] : 'No pick yet';
+    $('review-number1').disabled = !number1;
+  }
+
+  // ---------- rearrange ----------
+  function buildSortList(order) {
+    var ol = $('list-rearrange');
+    ol.textContent = '';
+    order.forEach(function (id) {
+      var li = document.createElement('li');
+      li.className = 'row';
+      li.dataset.id = id;
+      var rank = document.createElement('span'); rank.className = 'rank';
+      var handle = document.createElement('span'); handle.className = 'handle'; handle.textContent = '≡'; handle.setAttribute('aria-hidden', 'true');
+      var txt = document.createElement('span'); txt.className = 'txt'; txt.textContent = byId[id];
+      var greg = document.createElement('span'); greg.className = 'greg'; greg.textContent = "Greg's #" + id;
+      txt.appendChild(greg);
+      var moves = document.createElement('span'); moves.className = 'moves';
+      var up = document.createElement('button'); up.type = 'button'; up.className = 'mv'; up.dataset.dir = 'up'; up.textContent = '▲'; up.setAttribute('aria-label', 'Move up the list');
+      var down = document.createElement('button'); down.type = 'button'; down.className = 'mv'; down.dataset.dir = 'down'; down.textContent = '▼'; down.setAttribute('aria-label', 'Move down the list');
+      moves.appendChild(up); moves.appendChild(down);
+      li.appendChild(rank); li.appendChild(handle); li.appendChild(txt); li.appendChild(moves);
+      ol.appendChild(li);
+    });
+    renumber();
+  }
+  function renumber() {
+    var rows = $('list-rearrange').children, n = rows.length;
+    for (var i = 0; i < n; i++) {
+      rows[i].querySelector('.rank').textContent = n - i;
+      var mv = rows[i].querySelectorAll('.mv');
+      mv[0].disabled = i === 0;
+      mv[1].disabled = i === n - 1;
+      var label = byId[rows[i].dataset.id] + ', your number ' + (n - i);
+      mv[0].setAttribute('aria-label', 'Move up: ' + label);
+      mv[1].setAttribute('aria-label', 'Move down: ' + label);
+    }
+  }
+  function currentOrder() {
+    var rows = $('list-rearrange').children, out = [];
+    for (var i = 0; i < rows.length; i++) out.push(Number(rows[i].dataset.id));
+    return out;
+  }
+  function gregOrder() { return phrases.map(function (p) { return p.id; }); }
+  function isPermutation(arr) {
+    if (!Array.isArray(arr) || arr.length !== phrases.length) return false;
+    var seen = {};
+    for (var i = 0; i < arr.length; i++) { if (!byId[arr[i]] || seen[arr[i]]) return false; seen[arr[i]] = 1; }
+    return true;
+  }
+  function moveRow(li, dir) {
+    var ol = li.parentNode;
+    if (dir === 'up' && li.previousElementSibling) ol.insertBefore(li, li.previousElementSibling);
+    else if (dir === 'down' && li.nextElementSibling) ol.insertBefore(li.nextElementSibling, li);
+    else return;
+    renumber();
+    saveDraft();
+    li.classList.add('flash');
+    setTimeout(function () { li.classList.remove('flash'); }, 350);
+    var btn = li.querySelector('.mv[data-dir="' + dir + '"]');
+    if (btn && !btn.disabled) btn.focus({ preventScroll: true });
+    var r = li.getBoundingClientRect();
+    if (r.top < 70 || r.bottom > window.innerHeight - 90) li.scrollIntoView({ block: 'center' });
+  }
+  function initSortable() {
+    $('list-rearrange').addEventListener('click', function (e) {
+      var b = e.target.closest('.mv');
+      if (b) moveRow(b.closest('.row'), b.dataset.dir);
+    });
+    $('reset-rearrange').addEventListener('click', function () {
+      if (!confirm("Put everything back in Greg's order?")) return;
+      buildSortList(gregOrder());
+      saveDraft();
+    });
+    function attach() {
+      if (!window.Sortable) return false;
+      window.Sortable.create($('list-rearrange'), {
+        handle: '.handle',
+        animation: 150,
+        scroll: true,
+        bubbleScroll: true,
+        onEnd: function () { renumber(); saveDraft(); }
+      });
+      return true;
+    }
+    if (!attach()) window.addEventListener('load', attach);
+  }
+
+  // ---------- views ----------
+  function show(view) {
+    var views = document.querySelectorAll('.view');
+    for (var i = 0; i < views.length; i++) views[i].hidden = views[i].id !== 'view-' + view;
+    window.scrollTo(0, 0);
+  }
+
+  function paintChips() {
+    Object.keys(EX).forEach(function (ex) {
+      var chip = document.querySelector('[data-chip="' + ex + '"]');
+      chip.textContent = done[ex] ? 'Done' : 'Not yet';
+      chip.className = 'chip' + (done[ex] ? ' done' : '');
+    });
+  }
+
+  function idsFor(ex) {
+    if (ex === 'top10') return Array.from(top10);
+    if (ex === 'number1') return number1 ? [number1] : [];
+    return currentOrder();
+  }
+  function ready(ex) {
+    var ids = idsFor(ex);
+    return ex === 'top10' ? ids.length === 10 : ex === 'number1' ? ids.length === 1 : isPermutation(ids);
+  }
+
+  function route() {
+    var h = location.hash.replace(/^#/, '');
+    var m;
+    removeTurnstile();
+    if (EX[h]) {
+      if (done[h]) return showDone(h, 'Your ' + EX[h].short + ' is already in. Thanks!');
+      show(h);
+      return;
+    }
+    if ((m = h.match(/^confirm-(\w+)$/)) && EX[m[1]]) {
+      if (done[m[1]]) return showDone(m[1], 'Your ' + EX[m[1]].short + ' is already in. Thanks!');
+      if (!ready(m[1])) { location.replace('#' + m[1]); return; }
+      showConfirm(m[1]);
+      return;
+    }
+    paintChips();
+    show('home');
+  }
+
+  function showConfirm(ex) {
+    confirmEx = ex;
+    $('confirm-title').textContent = 'Lock in ' + EX[ex].name + '?';
+    $('confirm-back').href = '#' + ex;
+    $('confirm-back2').href = '#' + ex;
+    var ol = $('confirm-list');
+    ol.textContent = '';
+    ol.className = 'confirm-list' + (ex === 'rearrange' ? ' long' : '');
+    var ids = idsFor(ex);
+    if (ex === 'top10') ids = ids.slice().sort(function (a, b) { return a - b; });
+    if (ex === 'rearrange') ol.setAttribute('reversed', ''); else ol.removeAttribute('reversed');
+    if (ex === 'number1') ol.style.listStyle = 'none'; else ol.style.listStyle = '';
+    ids.forEach(function (id) {
+      var li = document.createElement('li');
+      li.textContent = byId[id];
+      ol.appendChild(li);
+    });
+    $('confirm-msg').textContent = '';
+    token = null;
+    show('confirm');
+    if (status && status.voting_open === false) {
+      $('confirm-msg').textContent = "Voting isn't open right now. Your picks are saved on this device, so come back soon.";
+    } else {
+      mountTurnstile();
+    }
+    paintSubmit();
+  }
+
+  function paintSubmit() {
+    var b = $('submit-btn');
+    b.disabled = sending || !token || (status && status.voting_open === false);
+    b.textContent = sending ? 'Sending...' : 'Lock it in';
+  }
+
+  function mountTurnstile() {
+    if (!window.turnstile) return; // turnstileReady() mounts it once the script loads
+    removeTurnstile();
+    widgetId = window.turnstile.render('#turnstile-box', {
+      sitekey: TURNSTILE_SITE_KEY,
+      theme: 'dark',
+      callback: function (t) { token = t; paintSubmit(); },
+      'expired-callback': function () { token = null; paintSubmit(); },
+      'error-callback': function () { token = null; paintSubmit(); $('confirm-msg').textContent = "The human check didn't load. Refresh the page and try again."; }
+    });
+  }
+  function removeTurnstile() {
+    if (widgetId !== null && window.turnstile) { try { window.turnstile.remove(widgetId); } catch (e) {} }
+    widgetId = null;
+    token = null;
+  }
+
+  function submit() {
+    var ex = confirmEx;
+    if (!ex || !token || sending) return;
+    sending = true;
+    paintSubmit();
+    $('confirm-msg').textContent = '';
+    fetch(API + '/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ exercise: ex, ids: idsFor(ex), token: token })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { return { status: r.status, body: j }; });
+    }).then(function (res) {
+      sending = false;
+      if (res.status === 200 && res.body.ok) {
+        markDone(ex);
+        showDone(ex, 'Your ' + EX[ex].short + ' is in. Thanks!');
+        return;
+      }
+      if (res.status === 409) {
+        markDone(ex);
+        showDone(ex, res.body.error || 'Looks like a vote from this connection is already in for this one.');
+        return;
+      }
+      failed(res.body.error || 'Voting is busy, try again later.');
+    }).catch(function () {
+      sending = false;
+      failed("Couldn't reach the vote counter. Check your connection and try again.");
+    });
+  }
+  function failed(text) {
+    $('confirm-msg').textContent = text;
+    token = null;
+    if (widgetId !== null && window.turnstile) { try { window.turnstile.reset(widgetId); } catch (e) {} }
+    paintSubmit();
+  }
+
+  function markDone(ex) {
+    done[ex] = true;
+    saveLocal(DONE_KEY, done);
+    if (ex === 'top10') top10.clear();
+    if (ex === 'number1') number1 = null;
+    if (ex === 'rearrange') delete draft.rearrange;
+    draft.top10 = Array.from(top10);
+    draft.number1 = number1;
+    saveLocal(DRAFT_KEY, draft);
+  }
+
+  function showDone(ex, text) {
+    removeTurnstile();
+    $('done-title').textContent = "You're in.";
+    $('done-msg').textContent = text;
+    var left = Object.keys(EX).filter(function (k) { return !done[k]; });
+    var box = $('still-open');
+    box.textContent = '';
+    if (left.length) {
+      box.appendChild(document.createTextNode('Still open for you: '));
+      left.forEach(function (k, i) {
+        var a = document.createElement('a');
+        a.href = '#' + k;
+        a.textContent = EX[k].name;
+        box.appendChild(a);
+        if (i < left.length - 1) box.appendChild(document.createTextNode(', '));
+      });
+    } else {
+      box.textContent = "That's all three. You're a legend.";
+    }
+    if (location.hash !== '#done') history.replaceState(null, '', '#done');
+    show('done');
+  }
+
+  // ---------- boot ----------
+  function loadStatus() {
+    if (API.indexOf('REPLACE-WITH') >= 0) { showBanner("Voting isn't hooked up yet. Check back soon."); return; }
+    fetch(API + '/api/status', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (s) {
+        if (!s || !s.ok) throw new Error('bad status');
+        status = s;
+        Object.keys(EX).forEach(function (k) { if (s.done && s.done[k]) done[k] = true; });
+        saveLocal(DONE_KEY, done);
+        if (!s.voting_open) showBanner("Voting isn't open right now. You can look around and your picks save on this device.");
+        else showBanner('');
+        route();
+      })
+      .catch(function () { showBanner("Can't reach the vote counter right now. You can still look around. Try again in a bit."); });
+  }
+
+  window.App = { turnstileReady: function () { if (confirmEx && !$('view-confirm').hidden && widgetId === null && !(status && status.voting_open === false)) mountTurnstile(); } };
+
+  fetch('catchphrases.json', { cache: 'no-cache' })
+    .then(function (r) { return r.json(); })
+    .then(function (list) {
+      phrases = list.slice().sort(function (a, b) { return b.id - a.id; });
+      phrases.forEach(function (p) { byId[p.id] = p.text; });
+      top10.forEach(function (id) { if (!byId[id]) top10.delete(id); });
+      if (number1 && !byId[number1]) number1 = null;
+      buildPickList('top10');
+      buildPickList('number1');
+      buildSortList(isPermutation(draft.rearrange) ? draft.rearrange : gregOrder());
+      initSortable();
+      paintTop10();
+      paintNumber1();
+      $('clear-top10').addEventListener('click', function () { if (top10.size && confirm('Clear all your picks?')) { top10.clear(); saveDraft(); paintTop10(); } });
+      $('review-top10').addEventListener('click', function () { location.hash = '#confirm-top10'; });
+      $('review-number1').addEventListener('click', function () { location.hash = '#confirm-number1'; });
+      $('review-rearrange').addEventListener('click', function () { location.hash = '#confirm-rearrange'; });
+      $('submit-btn').addEventListener('click', submit);
+      window.addEventListener('hashchange', route);
+      route();
+      loadStatus();
+    })
+    .catch(function () { showBanner("Couldn't load the list. Refresh the page to try again."); });
+})();
+</script>
+</body>
+</html>

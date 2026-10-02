@@ -1,0 +1,20 @@
+# Greg Cote Top 75 Catchphrase Countdown: Worker config.
+# No secrets in this file. Secrets (ADMIN_KEY, IP_SALT, TURNSTILE_SECRET) are set in the Cloudflare dashboard.
+
+name = "catchphrase-vote"
+main = "worker.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "catchphrase-db"
+database_id = "050d31bd-8dd7-4927-a436-510919e9793e"
+
+[vars]
+# Sites allowed to call the voting API (comma separated, no trailing slash).
+ALLOWED_ORIGINS = "https://catchphrases.thegregcoteshow.com,https://the-greg-cote-show.github.io"
+# Where index.html, results.html and catchphrases.json live (no trailing slash).
+# If you use the github.io address before the custom domain works, it looks like
+# https://the-greg-cote-show.github.io/REPO-NAME
+SITE_URL = "https://catchphrases.thegregcoteshow.com"

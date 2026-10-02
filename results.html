@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Results: Greg Cote's Top 75 Catchphrase Countdown</title>
+<meta name="description" content="How the fans voted on Greg Cote's Top 75 catchphrases.">
+<meta name="theme-color" content="#15130f">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   STYLE BLOCK: everything visual lives here. Restyle after the rebrand.
+   ===================================================================== */
+:root {
+  --amber: #EF9F27;
+  --coral: #D85A30;
+  --bg: #15130f;
+  --surface: #211d18;
+  --surface-2: #2b261f;
+  --line: #3a332a;
+  --ink: #f4ede3;
+  --ink-2: #c9bfb1;
+  --ink-3: #8f8679;
+  --good: #6cc68a;
+  --radius: 12px;
+  --font: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 19px; line-height: 1.35; min-height: 100vh; display: flex; flex-direction: column; }
+a { color: var(--amber); }
+[hidden] { display: none !important; }
+.wrap { width: 100%; max-width: 720px; margin: 0 auto; padding: 0 16px; }
+.site-head { padding: 22px 0 10px; border-bottom: 3px solid var(--coral); background: linear-gradient(180deg, #221a12 0%, var(--bg) 100%); }
+.kicker { margin: 0; color: var(--coral); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 15px; }
+h1 { margin: 4px 0 6px; font-size: 34px; line-height: 1.02; font-weight: 800; text-transform: uppercase; }
+h1 .accent { color: var(--amber); display: block; }
+h2 { font-size: 28px; margin: 28px 0 4px; text-transform: uppercase; font-weight: 800; color: var(--amber); }
+.sub { color: var(--ink-3); margin: 0 0 10px; }
+main { flex: 1; padding-bottom: 24px; }
+.preview { margin-top: 12px; padding: 10px 14px; border-radius: var(--radius); border: 2px dashed var(--coral); color: var(--coral); font-weight: 700; }
+.soon { margin: 40px 0; text-align: center; }
+.soon .big { font-size: 40px; font-weight: 800; text-transform: uppercase; color: var(--amber); }
+.soon p { color: var(--ink-2); }
+.list { list-style: none; margin: 0; padding: 0; }
+.item { display: grid; grid-template-columns: 44px 1fr auto; gap: 4px 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 0 0 8px; }
+.item .rk { font-size: 24px; font-weight: 800; color: var(--amber); text-align: right; font-variant-numeric: tabular-nums; }
+.item .tx { min-width: 0; }
+.item .meta { display: block; font-size: 15px; color: var(--ink-3); }
+.item .val { font-weight: 800; font-size: 21px; text-align: right; font-variant-numeric: tabular-nums; }
+.item .bar { grid-column: 2 / 4; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.item .bar span { display: block; height: 100%; background: var(--amber); border-radius: 3px; }
+.up { color: var(--good); }
+.down { color: var(--coral); }
+.even { color: var(--ink-3); }
+details summary { cursor: pointer; color: var(--amber); font-weight: 700; margin: 8px 0 12px; }
+.fine { color: var(--ink-3); font-size: 16px; margin-top: 24px; }
+footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px; padding: 16px 0 calc(16px + env(safe-area-inset-bottom)); }
+@media (min-width: 600px) { h1 { font-size: 46px; } }
+/* ===================== END STYLE BLOCK ===================== */
+</style>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <p class="kicker">The Greg Cote Show</p>
+    <h1>Greg Cote's Top 75 Catchphrase Countdown: <span class="accent">The Fans Have Spoken</span></h1>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="preview" class="preview" hidden></div>
+
+  <div id="soon" class="soon">
+    <div class="big" id="soon-title">Loading...</div>
+    <p id="soon-text"></p>
+    <p><a href="index.html">Go vote</a></p>
+  </div>
+
+  <div id="results" hidden>
+    <section id="sec-top10" hidden>
+      <h2>The Fans' Top 10</h2>
+      <p class="sub">How many voters put it in their Top 10.</p>
+      <ol class="list" id="list-top10"></ol>
+    </section>
+
+    <section id="sec-number1" hidden>
+      <h2>The Fans' Number 1</h2>
+      <p class="sub">Share of all Number 1 votes.</p>
+      <ol class="list" id="list-number1"></ol>
+    </section>
+
+    <section id="sec-rearrange" hidden>
+      <h2>The Fans' Countdown</h2>
+      <p class="sub">All 75, ranked by where fans put them on average. The arrow shows how far it moved from Greg's spot.</p>
+      <ol class="list" id="list-rearrange-top"></ol>
+      <details>
+        <summary>Show all 75</summary>
+        <ol class="list" id="list-rearrange-rest"></ol>
+      </details>
+    </section>
+
+    <p class="fine" id="fine"></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap"><p><a href="index.html">Back to voting</a></p></div>
+</footer>
+
+<script>
+// ===== CONFIG: fill_api_base.ps1 rewrites API_BASE. =====
+const API_BASE = "https://catchphrase-vote.yeti-f3c.workers.dev";
+// ===== END CONFIG =====
+</script>
+<script>
+(function () {
+  'use strict';
+  var API = API_BASE.replace(/\/+$/, '');
+  var byId = {};
+  function $(id) { return document.getElementById(id); }
+
+  function soon(title, text) {
+    $('soon-title').textContent = title;
+    $('soon-text').textContent = text || '';
+    $('soon').hidden = false;
+    $('results').hidden = true;
+  }
+
+  function item(rank, id, valText, barPct, metaText, metaClass) {
+    var li = document.createElement('li');
+    li.className = 'item';
+    var rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = rank;
+    var tx = document.createElement('span'); tx.className = 'tx'; tx.textContent = byId[id] || ('#' + id);
+    var meta = document.createElement('span'); meta.className = 'meta' + (metaClass ? ' ' + metaClass : ''); meta.textContent = metaText;
+    tx.appendChild(meta);
+    var val = document.createElement('span'); val.className = 'val'; val.textContent = valText;
+    li.appendChild(rk); li.appendChild(tx); li.appendChild(val);
+    if (barPct !== null) {
+      var bar = document.createElement('span'); bar.className = 'bar';
+      var fill = document.createElement('span'); fill.style.width = Math.max(0, Math.min(100, barPct)) + '%';
+      bar.appendChild(fill); li.appendChild(bar);
+    }
+    return li;
+  }
+
+  function render(snap, createdAt) {
+    var t = snap.totals || {};
+    var any = false;
+
+    if (t.top10 && snap.top10 && snap.top10.length) {
+      any = true;
+      var top = snap.top10.slice(0, 10), max10 = top[0].pct || 1;
+      top.forEach(function (x, i) {
+        $('list-top10').appendChild(item(i + 1, x.id, x.pct + '%', x.pct / max10 * 100, "Greg's #" + x.id));
+      });
+      $('sec-top10').hidden = false;
+    }
+
+    if (t.number1 && snap.number1 && snap.number1.length) {
+      any = true;
+      var max1 = snap.number1[0].pct || 1;
+      snap.number1.forEach(function (x, i) {
+        $('list-number1').appendChild(item(i + 1, x.id, x.pct + '%', x.pct / max1 * 100, "Greg's #" + x.id));
+      });
+      $('sec-number1').hidden = false;
+    }
+
+    if (t.rearrange && snap.rearrange && snap.rearrange.length) {
+      any = true;
+      snap.rearrange.forEach(function (x, i) {
+        var mv = x.greg - x.fan_rank;
+        var meta = mv > 0 ? '▲ ' + mv + " from Greg's #" + x.greg : mv < 0 ? '▼ ' + (-mv) + " from Greg's #" + x.greg : "Same as Greg's #" + x.greg;
+        var cls = mv > 0 ? 'up' : mv < 0 ? 'down' : 'even';
+        var li = item(x.fan_rank, x.id, '', null, meta, cls);
+        $(i < 10 ? 'list-rearrange-top' : 'list-rearrange-rest').appendChild(li);
+      });
+      $('sec-rearrange').hidden = false;
+    }
+
+    if (!any) { soon('Results coming soon', 'No votes in this snapshot yet.'); return; }
+
+    var parts = [];
+    if (t.top10) parts.push(t.top10 + ' Top 10 ballots');
+    if (t.number1) parts.push(t.number1 + ' Number 1 votes');
+    if (t.rearrange) parts.push(t.rearrange + ' full countdowns');
+    var when = createdAt ? new Date(createdAt) : null;
+    $('fine').textContent = 'Based on ' + parts.join(', ') + '.' + (when && !isNaN(when) ? ' Counted ' + when.toLocaleDateString() + '.' : '');
+    $('soon').hidden = true;
+    $('results').hidden = false;
+  }
+
+  function loadPhrases() {
+    return fetch('catchphrases.json', { cache: 'no-cache' })
+      .then(function (r) { return r.json(); })
+      .then(function (list) { list.forEach(function (p) { byId[p.id] = p.text; }); })
+      .catch(function () {});
+  }
+
+  function loadResults() {
+    if (window.__PREVIEW__) {
+      var p = window.__PREVIEW__;
+      $('preview').hidden = false;
+      $('preview').textContent = p.snapshot
+        ? "PREVIEW from your last snapshot. Fans can't see this until you click Go live."
+        : 'PREVIEW: no snapshot saved yet. Save one in the admin dashboard first.';
+      return Promise.resolve(p.snapshot ? { public: true, snapshot: p.snapshot, created_at: p.created_at } : { public: false });
+    }
+    if (API.indexOf('REPLACE-WITH') >= 0) return Promise.resolve({ public: false });
+    return fetch(API + '/api/results', { cache: 'no-store' }).then(function (r) { return r.json(); });
+  }
+
+  Promise.all([loadPhrases(), loadResults()])
+    .then(function (out) {
+      var res = out[1];
+      if (res && res.public && res.snapshot) render(res.snapshot, res.created_at);
+      else soon('Results coming soon', "Voting's still going. Get yours in, then check back.");
+    })
+    .catch(function () { soon('Results coming soon', "Couldn't load right now. Try again in a bit."); });
+})();
+</script>
+</body>
+</html>
