@@ -1,5 +1,7 @@
 # SETUP (browser only)
 
+> **Status (Oct 2, 2026): every step below is DONE and the site is live at https://catchphrases.thegregcoteshow.com.** Keep this file as the recipe for rebuilding from scratch. For day-to-day use, jump to "Before launch" and "Results day" at the bottom.
+
 One step at a time. Do them in order. Every step happens in a web browser.
 
 > If the overnight deploy ran, some steps are already done for you. MORNING.md lists which ones. Those steps are marked **(maybe done overnight)** below.
