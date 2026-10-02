@@ -663,6 +663,9 @@ ol { padding-left: 22px; margin: 4px 0; }
 .sugg button, .smallbtn { font-size: 15px; padding: 4px 10px; }
 .saveinfo { color: var(--ink-3); margin-left: 8px; align-self: center; }
 .saveinfo.dirty { color: var(--hot); font-weight: 700; }
+.jump { margin: 4px 0 0; }
+.jump a { color: var(--brand); font-weight: 700; text-decoration: none; }
+.jump a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -684,6 +687,7 @@ ol { padding-left: 22px; margin: 4px 0; }
     <button id="btnClear" class="danger">Clear all votes</button>
   </div>
   <p id="msg" role="status"></p>
+  <p class="jump"><a href="#omissions-review">Jump to Biggest Omissions review &darr;</a></p>
 </header>
 <main>
   <section>
@@ -719,7 +723,7 @@ ol { padding-left: 22px; margin: 4px 0; }
     <div class="tablewrap"><table id="tblRearr"></table></div>
   </section>
 
-  <section>
+  <section id="omissions-review">
     <h2>Biggest Omissions</h2>
     <p class="note">Fans type these themselves, so the same phrase shows up spelled a dozen ways. Answers that only differ by capitals, spacing, punctuation or stretched letters ("nowwww") are grouped automatically. Then you finish the job here: look at <b>Possible matches</b>, merge what's the same, fix group names the way you want them shown, exclude junk, and click <b>Save review</b>. Snapshots and the public results use this review.</p>
     <div class="actions">
