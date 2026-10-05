@@ -714,7 +714,27 @@ ol { padding-left: 22px; margin: 4px 0; }
 .jump { margin: 4px 0 0; }
 .jump a { color: var(--brand); font-weight: 700; text-decoration: none; }
 .jump a:hover { text-decoration: underline; }
-.people { font-size: 24px; font-weight: 700; color: var(--brand); margin: 16px 0 2px; }
+.tabs { display: flex; gap: 6px; margin-top: 10px; border-bottom: 2px solid var(--line); }
+.tab { font-size: 22px; font-weight: 700; padding: 8px 18px; color: var(--ink-3); text-decoration: none; border: 2px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0; margin-bottom: -2px; }
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--brand); background: var(--surface); border-color: var(--line); border-bottom: 2px solid var(--surface); }
+.geo-toggle { display: flex; gap: 8px; margin: 6px 0 10px; }
+.geo-btn.active { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
+.mapgrid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 18px; }
+@media (min-width: 900px) { .mapgrid { grid-template-columns: 2fr 1fr; } }
+.mapbox { background: var(--surface); border-radius: 10px; padding: 8px; min-height: 200px; }
+.mapbox svg { display: block; width: 100%; height: auto; }
+.map-area { stroke: var(--bg); stroke-width: .5; cursor: pointer; }
+.map-area:hover { stroke: var(--hot); stroke-width: 1.5; }
+.map-area.sel { stroke: var(--hot); stroke-width: 2; }
+.drill { background: var(--surface); border-radius: 10px; padding: 10px 14px; max-height: 520px; overflow-y: auto; }
+.drill h3 { margin-top: 4px; color: var(--brand); }
+.bar-row { display: grid; grid-template-columns: minmax(0, 1fr) 90px 34px; gap: 8px; align-items: center; padding: 3px 0; font-size: 17px; }
+.bar-row .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-wrap { height: 10px; background: var(--surface-2); border-radius: 5px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--brand); border-radius: 5px; }
+.bar-row .ct { text-align: right; font-variant-numeric: tabular-nums; }
+.maptip { position: fixed; z-index: 10; pointer-events: none; background: var(--bg); color: var(--ink); border: 1px solid var(--brand); border-radius: 6px; padding: 4px 10px; font-size: 16px; }
 .grid3 { display: grid; grid-template-columns: 1fr; gap: 16px; }
 @media (min-width: 900px) { .grid3 { grid-template-columns: 1fr 1fr 1fr; } }
 .tablewrap.scroll { max-height: 420px; overflow-y: auto; }
@@ -743,25 +763,18 @@ body.viewer .admin-only { display: none !important; }
   </div>
   <p id="msg" role="status"></p>
   <p class="jump admin-only"><a href="#omissions-review">Jump to Biggest Omissions review &darr;</a></p>
+  <nav class="tabs" aria-label="Views">
+    <a href="#votes" class="tab" id="tabVotes">Votes</a>
+    <a href="#map" class="tab" id="tabMap">Map</a>
+  </nav>
 </header>
-<main>
+<main id="viewVotes">
   <section>
     <h2>Total Submissions: <span id="totalSubs">0</span></h2>
     <div class="tiles" id="tiles"></div>
-    <p class="people">People Who Voted: <span id="totalPeople">0</span></p>
-    <p class="note">Each person counts once, whether they voted in one category or all four, even if they came back days later to finish. Counted by device, so one person voting on both a phone and a laptop counts twice.</p>
-    <h3>Submissions per day (UTC)</h3>
-    <div class="chartbox"><canvas id="chDays" aria-label="Submissions per day"></canvas></div>
-  </section>
-
-  <section>
-    <h2>Where People Voted From</h2>
-    <p class="note">Counted per person, from where they cast their first vote. This is Cloudflare's best guess from the internet connection, so cities can be off (phones often show up in a nearby city). The first 128 votes (before the evening of October 5) only have the country.</p>
-    <div class="grid3">
-      <div><h3>Countries</h3><div class="tablewrap scroll"><table id="tblCountries"></table></div></div>
-      <div><h3>States / regions</h3><div class="tablewrap scroll"><table id="tblRegions"></table></div></div>
-      <div><h3>Cities</h3><div class="tablewrap scroll"><table id="tblCities"></table></div></div>
-    </div>
+    <p class="note">Total = people who voted. Each person counts once, whether they voted in one category or all four, even if they came back days later to finish. Counted by device, so someone voting on both a phone and a laptop counts twice. The boxes count votes per category.</p>
+    <h3>Votes per day (UTC)</h3>
+    <div class="chartbox"><canvas id="chDays" aria-label="Votes per day"></canvas></div>
   </section>
 
   <section>
@@ -808,6 +821,31 @@ body.viewer .admin-only { display: none !important; }
     <div id="omExcluded" class="note admin-only"></div>
   </section>
 </main>
+
+<main id="viewMap" hidden>
+  <section>
+    <h2>Where People Voted From</h2>
+    <p class="note">Counted per person, from where they cast their first vote. This is Cloudflare's best guess from the internet connection, so cities can be off (phones often show up in a nearby city). The first 128 votes (before the evening of October 5) only have the country.</p>
+    <div class="geo-toggle">
+      <button class="geo-btn active" data-geo="world">World</button>
+      <button class="geo-btn" data-geo="us">United States</button>
+    </div>
+    <div class="mapgrid">
+      <div class="mapbox" id="mapWrap"><p class="note">Loading map...</p></div>
+      <div class="drill">
+        <h3 id="drillHdr">Click a country</h3>
+        <p class="note" id="drillHint"></p>
+        <div id="drillList"></div>
+      </div>
+    </div>
+    <div class="grid3">
+      <div><h3>Countries</h3><div class="tablewrap scroll"><table id="tblCountries"></table></div></div>
+      <div><h3>States / regions</h3><div class="tablewrap scroll"><table id="tblRegions"></table></div></div>
+      <div><h3>Cities</h3><div class="tablewrap scroll"><table id="tblCities"></table></div></div>
+    </div>
+  </section>
+</main>
+<div id="mapTip" class="maptip" hidden></div>
 
 <script>
 var CFG = __ADMIN_CONFIG__;
@@ -896,13 +934,17 @@ function compute() {
     var d = String(r.created_at || '').slice(0, 10) || '?';
     days[d] = (days[d] || 0) + 1;
   });
-  var geo = { countries: {}, regions: {}, cities: {} };
+  // geo: labels for the tables. byCountry / byRegion / byCity: keyed by code for the maps.
+  var geo = { countries: {}, regions: {}, cities: {}, byCountry: {}, byRegion: {}, byCity: {} };
   function bump(o, k) { o[k] = (o[k] || 0) + 1; }
   Object.keys(people).forEach(function (dev) {
     var r = people[dev], c = r.country || '', st = r.region || '', ci = r.city || '';
     bump(geo.countries, c ? countryName(c) : 'Unknown');
     bump(geo.regions, st ? st + ', ' + (c || '?') : 'Unknown');
     bump(geo.cities, ci ? ci + (st ? ', ' + st : '') + ', ' + (c || '?') : 'Unknown');
+    if (c) bump(geo.byCountry, c);
+    if (c && st) bump(geo.byRegion, c + '|' + st);
+    if (c && st && ci) bump(geo.byCity, c + '|' + st + '|' + ci);
   });
   var ids = [];
   for (var i = 75; i >= 1; i--) ids.push(i);
@@ -1010,8 +1052,7 @@ function table(id, head, rows) {
 
 function render() {
   var R = compute(), S = R.snapshot, T = S.totals;
-  $('totalSubs').textContent = R.total;
-  $('totalPeople').textContent = R.people;
+  $('totalSubs').textContent = R.people;
   $('tiles').innerHTML = [['Top 10', T.top10], ['Number 1', T.number1], ['Rearrange', T.rearrange], ['Omissions', T.omissions]]
     .map(function (x) { return '<div class="tile"><div class="n">' + x[1] + '</div><div class="l">' + esc(x[0]) + '</div></div>'; }).join('');
 
@@ -1020,6 +1061,9 @@ function render() {
   geoTable('tblCountries', 'Country', R.geo.countries, R.people);
   geoTable('tblRegions', 'State / region', R.geo.regions, R.people);
   geoTable('tblCities', 'City', R.geo.cities, R.people);
+  GEO = R.geo;
+  GEO_PEOPLE = R.people;
+  if (!$('viewMap').hidden) drawMap();
 
   var t20 = S.top10.slice(0, 20);
   barChart('chTop10', t20.map(function (x) { return short(x.id); }), t20.map(function (x) { return x.pct; }), true,
@@ -1302,6 +1346,192 @@ $('btnSaveReview').onclick = async function () {
   try { await saveReview(); say('Omissions review saved.'); }
   catch (e) { say('Save failed: ' + e.message, true); }
 };
+
+// ---- Map tab: flat world map + US states map, same idea as PFPI. Counts people (first vote's location).
+// d3 + topojson load the first time the tab opens, so the Votes tab never pays for them.
+var GEO = null, GEO_PEOPLE = 0, GEO_VIEW = 'world', MAP_SEL = null, MAP_SEL_NAME = '';
+var D3_URL = 'https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js';
+var D3_SRI = 'sha512-vc58qvvBdrDR4etbxMdlTt4GBQk1qjvyORR2nrsPsFPyrs+/u5c3+1Ct6upOgdZoIl7eq6k3a1UPDSNAQi/32A==';
+var TOPO_URL = 'https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js';
+var TOPO_SRI = 'sha512-F6LRbyw1ZdEE2Lfw8JXPeqsPkl4gl3ZdjxfQ+TA9CwJuZTB+N5DANb0qQtENki+X3IMAVJnRsc3NTgBH3zcorA==';
+var WORLD_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json';
+var US_URL = 'https://cdn.jsdelivr.net/npm/us-atlas@3.0.1/states-10m.json';
+var mapLibs = null, mapData = {};
+// ISO alpha-2 -> world-atlas numeric id (copied from PFPI). A country missing here just shows as no data.
+var A2N = {
+  AF:"004",AX:"248",AL:"008",DZ:"012",AS:"016",AD:"020",AO:"024",AI:"660",AQ:"010",AG:"028",
+  AR:"032",AM:"051",AW:"533",AU:"036",AT:"040",AZ:"031",BS:"044",BH:"048",BD:"050",BB:"052",
+  BY:"112",BE:"056",BZ:"084",BJ:"204",BM:"060",BT:"064",BO:"068",BA:"070",BW:"072",BR:"076",
+  IO:"086",BN:"096",BG:"100",BF:"854",BI:"108",CV:"132",KH:"116",CM:"120",CA:"124",KY:"136",
+  CF:"140",TD:"148",CL:"152",CN:"156",CX:"162",CC:"166",CO:"170",KM:"174",CG:"178",CD:"180",
+  CK:"184",CR:"188",CI:"384",HR:"191",CU:"192",CW:"531",CY:"196",CZ:"203",DK:"208",DJ:"262",
+  DM:"212",DO:"214",EC:"218",EG:"818",SV:"222",GQ:"226",ER:"232",EE:"233",SZ:"748",ET:"231",
+  FK:"238",FO:"234",FJ:"242",FI:"246",FR:"250",GF:"254",PF:"258",GA:"266",GM:"270",GE:"268",
+  DE:"276",GH:"288",GI:"292",GR:"300",GL:"304",GD:"308",GP:"312",GU:"316",GT:"320",GG:"831",
+  GN:"324",GW:"624",GY:"328",HT:"332",HN:"340",HK:"344",HU:"348",IS:"352",IN:"356",ID:"360",
+  IR:"364",IQ:"368",IE:"372",IM:"833",IL:"376",IT:"380",JM:"388",JP:"392",JE:"832",JO:"400",
+  KZ:"398",KE:"404",KI:"296",KW:"414",KG:"417",LA:"418",LV:"428",LB:"422",LS:"426",LR:"430",
+  LY:"434",LI:"438",LT:"440",LU:"442",MO:"446",MG:"450",MW:"454",MY:"458",MV:"462",ML:"466",
+  MT:"470",MH:"584",MQ:"474",MR:"478",MU:"480",YT:"175",MX:"484",FM:"583",MD:"498",MC:"492",
+  MN:"496",ME:"499",MS:"500",MA:"504",MZ:"508",MM:"104",NA:"516",NR:"520",NP:"524",NL:"528",
+  NC:"540",NZ:"554",NI:"558",NE:"562",NG:"566",NU:"570",NF:"574",KP:"408",MK:"807",MP:"580",
+  NO:"578",OM:"512",PK:"586",PW:"585",PS:"275",PA:"591",PG:"598",PY:"600",PE:"604",PH:"608",
+  PN:"612",PL:"616",PT:"620",PR:"630",QA:"634",RE:"638",RO:"642",RU:"643",RW:"646",BL:"652",
+  SH:"654",KN:"659",LC:"662",MF:"663",PM:"666",VC:"670",WS:"882",SM:"674",ST:"678",SA:"682",
+  SN:"686",RS:"688",SC:"690",SL:"694",SG:"702",SX:"534",SK:"703",SI:"705",SB:"090",SO:"706",
+  ZA:"710",KR:"410",SS:"728",ES:"724",LK:"144",SD:"729",SR:"740",SJ:"744",SE:"752",CH:"756",
+  SY:"760",TW:"158",TJ:"762",TZ:"834",TH:"764",TL:"626",TG:"768",TK:"772",TO:"776",TT:"780",
+  TN:"788",TR:"792",TM:"795",TC:"796",TV:"798",UG:"800",UA:"804",AE:"784",GB:"826",US:"840",
+  UY:"858",UZ:"860",VU:"548",VA:"336",VE:"862",VN:"704",VG:"092",VI:"850",WF:"876",EH:"732",
+  YE:"887",ZM:"894",ZW:"716"
+};
+var N2A = {};
+Object.keys(A2N).forEach(function (a) { N2A[A2N[a]] = a; });
+
+function loadScript(src, sri) {
+  return new Promise(function (ok, bad) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.integrity = sri;
+    s.crossOrigin = 'anonymous';
+    s.referrerPolicy = 'no-referrer';
+    s.onload = function () { ok(); };
+    s.onerror = function () { bad(new Error('could not load ' + src)); };
+    document.head.appendChild(s);
+  });
+}
+function ensureMap(which) {
+  if (!mapLibs) mapLibs = loadScript(D3_URL, D3_SRI).then(function () { return loadScript(TOPO_URL, TOPO_SRI); });
+  if (!mapData[which]) {
+    mapData[which] = mapLibs.then(function () {
+      return fetch(which === 'us' ? US_URL : WORLD_URL, { referrerPolicy: 'no-referrer' }).then(function (r) {
+        if (!r.ok) throw new Error('map data HTTP ' + r.status);
+        return r.json();
+      });
+    });
+  }
+  return mapData[which];
+}
+
+function sortedEntries(obj) {
+  return Object.keys(obj).map(function (k) { return [k, obj[k]]; })
+    .sort(function (a, b) { return b[1] - a[1] || (a[0] < b[0] ? -1 : 1); });
+}
+function bars(entries) {
+  if (!entries.length) return '';
+  var max = entries[0][1] || 1;
+  return entries.map(function (e) {
+    return '<div class="bar-row"><span class="nm" title="' + esc(e[0]) + '">' + esc(e[0]) + '</span>' +
+      '<span class="bar-wrap"><span class="bar-fill" style="display:block;width:' + Math.max(2, Math.round(e[1] / max * 100)) + '%"></span></span>' +
+      '<span class="ct">' + e[1] + '</span></div>';
+  }).join('');
+}
+// The side panel before anything is clicked: the top countries (World) or states (US).
+function resetDrill() {
+  var us = GEO_VIEW === 'us', list = {};
+  $('drillHdr').textContent = us ? 'Top states' : 'Top countries';
+  $('drillHint').textContent = 'Brighter = more people. Click a shaded ' + (us ? 'state for its cities.' : 'country for its states / regions.');
+  if (us) Object.keys(GEO.byRegion).forEach(function (k) { var p = k.split('|'); if (p[0] === 'US') list[p[1]] = GEO.byRegion[k]; });
+  else Object.keys(GEO.byCountry).forEach(function (c) { list[countryName(c)] = GEO.byCountry[c]; });
+  $('drillList').innerHTML = bars(sortedEntries(list)) || '<p class="note">No location data yet.</p>';
+}
+function showDrill(key, name) {
+  var us = GEO_VIEW === 'us', list = {}, total = 0;
+  if (us) {
+    Object.keys(GEO.byCity).forEach(function (k) { var p = k.split('|'); if (p[0] === 'US' && p[1] === key) list[p[2]] = GEO.byCity[k]; });
+    Object.keys(GEO.byRegion).forEach(function (k) { if (k === 'US|' + key) total = GEO.byRegion[k]; });
+  } else {
+    Object.keys(GEO.byRegion).forEach(function (k) { var p = k.split('|'); if (p[0] === key) list[p[1]] = GEO.byRegion[k]; });
+    total = GEO.byCountry[key] || 0;
+  }
+  $('drillHdr').textContent = name + ': ' + total + (total === 1 ? ' person' : ' people');
+  $('drillHint').textContent = us ? 'By city.' : 'By state / region.';
+  $('drillList').innerHTML = bars(sortedEntries(list)) ||
+    '<p class="note">No ' + (us ? 'city' : 'state or city') + ' data for ' + esc(name) + ' yet.</p>';
+}
+
+async function drawMap() {
+  if (!GEO) return;
+  var view = GEO_VIEW, wrap = $('mapWrap'), topo;
+  try { topo = await ensureMap(view); }
+  catch (e) {
+    mapLibs = null; mapData = {};
+    wrap.innerHTML = '<p class="note">Could not load the map (' + esc(e.message) + '). The tables below still work.</p>';
+    return;
+  }
+  if (view !== GEO_VIEW) return; // switched views while it loaded
+  var W = 900, H, feats, proj, counts = {}, keyOf, nameOf;
+  if (view === 'us') {
+    feats = topojson.feature(topo, topo.objects.states).features;
+    keyOf = function (f) { return (f.properties && f.properties.name) || ''; };
+    nameOf = keyOf;
+    Object.keys(GEO.byRegion).forEach(function (k) { var p = k.split('|'); if (p[0] === 'US') counts[p[1]] = GEO.byRegion[k]; });
+    H = 560;
+    proj = d3.geoAlbersUsa().fitSize([W - 10, H - 10], { type: 'FeatureCollection', features: feats });
+  } else {
+    feats = topojson.feature(topo, topo.objects.countries).features;
+    keyOf = function (f) { return N2A[String(f.id).padStart(3, '0')] || ''; };
+    nameOf = function (f) { return (f.properties && f.properties.name) || keyOf(f) || 'Unknown'; };
+    counts = GEO.byCountry;
+    H = 470;
+    proj = d3.geoNaturalEarth1().fitSize([W - 10, H - 10], { type: 'Sphere' });
+  }
+  var max = 1;
+  Object.keys(counts).forEach(function (k) { if (counts[k] > max) max = counts[k]; });
+  var color = d3.scaleSequential(d3.interpolateRgb('#0f5f69', '#9ff8fc')).domain([0, Math.sqrt(max)]);
+  var path = d3.geoPath(proj), tip = $('mapTip');
+  wrap.innerHTML = '';
+  var svg = d3.select(wrap).append('svg').attr('viewBox', '0 0 ' + W + ' ' + H)
+    .attr('role', 'img').attr('aria-label', view === 'us' ? 'Map of the United States' : 'World map');
+  if (view === 'world') svg.append('path').attr('d', path({ type: 'Sphere' })).attr('fill', 'rgba(255,255,255,0.03)');
+  svg.selectAll('path.map-area').data(feats).join('path')
+    .attr('class', function (f) { return 'map-area' + (MAP_SEL && keyOf(f) === MAP_SEL ? ' sel' : ''); })
+    .attr('d', path)
+    .attr('data-key', function (f) { return keyOf(f); })
+    .attr('fill', function (f) { var n = counts[keyOf(f)] || 0; return n ? color(Math.sqrt(n)) : 'rgba(255,255,255,0.08)'; })
+    .on('mousemove', function (ev, f) {
+      var n = counts[keyOf(f)] || 0;
+      tip.hidden = false;
+      tip.style.left = (ev.clientX + 14) + 'px';
+      tip.style.top = (ev.clientY + 10) + 'px';
+      tip.textContent = nameOf(f) + ': ' + n + (n === 1 ? ' person' : ' people');
+    })
+    .on('mouseleave', function () { tip.hidden = true; })
+    .on('click', function (ev, f) {
+      var k = keyOf(f);
+      if (!k) return;
+      MAP_SEL = k;
+      MAP_SEL_NAME = nameOf(f);
+      svg.selectAll('path.map-area').classed('sel', function (g) { return keyOf(g) === k; });
+      showDrill(k, MAP_SEL_NAME);
+    });
+  if (MAP_SEL) showDrill(MAP_SEL, MAP_SEL_NAME); else resetDrill();
+}
+
+document.querySelectorAll('.geo-btn').forEach(function (b) {
+  b.onclick = function () {
+    GEO_VIEW = b.dataset.geo;
+    MAP_SEL = null;
+    document.querySelectorAll('.geo-btn').forEach(function (x) { x.classList.toggle('active', x === b); });
+    $('mapWrap').innerHTML = '<p class="note">Loading map...</p>';
+    drawMap();
+  };
+});
+
+// Tabs: #map shows the Map view, anything else the Votes view.
+function showTab() {
+  var map = location.hash === '#map';
+  $('viewVotes').hidden = map;
+  $('viewMap').hidden = !map;
+  $('tabVotes').classList.toggle('active', !map);
+  $('tabMap').classList.toggle('active', map);
+  $('mapTip').hidden = true;
+  if (map) { drawMap(); return; }
+  var target = location.hash.length > 1 && document.getElementById(location.hash.slice(1));
+  if (target) target.scrollIntoView();
+}
+window.addEventListener('hashchange', showTab);
+showTab();
 
 async function refresh() {
   try {
