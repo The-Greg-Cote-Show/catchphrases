@@ -49,6 +49,16 @@ button, select { font: inherit; color: inherit; }
 .kicker { margin: 0; color: var(--hot); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 15px; }
 h1 { margin: 4px 0 6px; font-size: 34px; line-height: 1.02; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; }
 h1 .accent { color: var(--brand-text); display: block; }
+/* Show website + social icons, under the title, above the orange line */
+.show-links { display: flex; align-items: center; gap: 14px; margin: 2px 0 2px; }
+.show-site { color: #ffffff; font-size: 20px; font-weight: 600; text-decoration: none; margin-right: 4px; }
+.show-site:hover, .show-site:focus-visible { text-decoration: underline; }
+.social { display: inline-flex; color: #ffffff; padding: 4px; }
+.social svg { width: 24px; height: 24px; fill: currentColor; }
+.social svg.ig { fill: none; }
+.social:hover, .social:focus-visible { color: var(--brand-text); }
+.when { color: var(--ink-2); margin: -4px 0 16px; }
+.when-pop { margin: 0 0 16px; color: var(--ink-2); font-size: 18px; }
 h2 { font-size: 30px; line-height: 1.1; margin: 8px 0 4px; text-transform: uppercase; font-weight: 800; color: var(--brand-text); }
 .lede { font-size: 21px; color: var(--ink-2); margin: 16px 0; }
 .help { color: var(--ink-2); margin: 0 0 12px; }
@@ -150,6 +160,19 @@ main { flex: 1; padding-bottom: 24px; }
   <div class="wrap">
     <p class="kicker">The Greg Cote Show</p>
     <h1>Greg Cote's Top 75 Catchphrase Countdown: <span class="accent">Your Turn</span></h1>
+    <div class="show-links">
+      <a class="show-site" href="https://thegregcoteshow.com" target="_blank" rel="noopener">thegregcoteshow.com</a>
+      <a class="social" href="https://www.youtube.com/@thegregcoteshow" target="_blank" rel="noopener" aria-label="YouTube @thegregcoteshow" title="YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 7.2c.2-1.6 1.4-2.7 3-2.8C7.6 4.2 9.8 4.1 12 4.1s4.4.1 6.5.3c1.6.1 2.8 1.2 3 2.8.2 1.6.3 3.2.3 4.8s-.1 3.2-.3 4.8c-.2 1.6-1.4 2.7-3 2.8-2.1.2-4.3.3-6.5.3s-4.4-.1-6.5-.3c-1.6-.1-2.8-1.2-3-2.8C2.3 15.2 2.2 13.6 2.2 12s.1-3.2.3-4.8zM10 8.6v6.8l5.8-3.4z"/></svg>
+      </a>
+      <a class="social" href="https://twitter.com/thegregcoteshow" target="_blank" rel="noopener" aria-label="Twitter @thegregcoteshow" title="Twitter">
+        <!-- Twitter bird: Font Awesome Free 5 "twitter" icon, CC BY 4.0, fontawesome.com/license/free -->
+        <svg viewBox="0 0 512 512" aria-hidden="true"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+      </a>
+      <a class="social" href="https://www.instagram.com/thegregcoteshow" target="_blank" rel="noopener" aria-label="Instagram @thegregcoteshow" title="Instagram">
+        <svg class="ig" viewBox="0 0 24 24" aria-hidden="true" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>
+      </a>
+    </div>
   </div>
 </header>
 
@@ -159,6 +182,7 @@ main { flex: 1; padding-bottom: 24px; }
   <!-- HOME -->
   <section id="view-home" class="view">
     <p class="lede">Greg counted down his Top 75. Now you get a say. Do one or do them all.</p>
+    <p class="when" id="when-home"></p>
     <div class="cards">
       <a class="card" href="#top10">
         <span class="card-title">Your Top 10</span>
@@ -272,6 +296,7 @@ main { flex: 1; padding-bottom: 24px; }
     <p id="done-title" class="pop-title"></p>
     <p id="done-msg" class="pop-msg" hidden></p>
     <div class="still-open" id="still-open"></div>
+    <p class="when-pop" id="when-pop" hidden></p>
     <div class="pop-actions">
       <button type="button" class="btn primary" id="done-home">Back to home</button>
     </div>
@@ -304,12 +329,17 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   'use strict';
   var API = API_BASE.replace(/\/+$/, '');
   var EX = {
-    top10: { name: 'Your Top 10', short: 'Top 10', thanks: "Votin' It" },
+    top10: { name: 'Your Top 10', short: 'Top 10', thanks: "Votin' it!" },
     number1: { name: 'Your Number 1', short: 'Number 1', thanks: "Very good! You've successfully submitted your favorite of Greg's Catchphrases" },
     omissions: { name: 'Biggest Omissions', short: 'Biggest Omissions', thanks: 'Good on ya! Thanks for telling Greg where he got it wrong.' },
     rearrange: { name: 'Redo the Countdown', short: 'Redo the Countdown', thanks: 'You may be right! Greg always said to make your own list if you have a complaint about his.' }
   };
   var OM_BOXES = 5;
+  // Dates in the copy. "Come back before Oct 18" shows until midnight Oct 18 on the visitor's own clock.
+  // Message only: voting still opens and closes from the admin switch.
+  var VOTE_BY = new Date(2026, 9, 18);
+  var RESULTS_LINE = 'Hear and review the results on October 19.';
+  function comeBack() { return new Date() < VOTE_BY; }
   var DRAFT_KEY = 'gcs75-draft-v1';
   var DONE_KEY = 'gcs75-done-v1';
   var DEVICE_KEY = 'gcs75-device-v1';
@@ -582,7 +612,12 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     window.scrollTo(0, 0);
   }
 
+  function paintWhen() {
+    $('when-home').textContent = (comeBack() ? "Can't finish right now? Come back and finish your voting any time before October 18. " : '') + RESULTS_LINE;
+  }
+
   function paintChips() {
+    paintWhen();
     Object.keys(EX).forEach(function (ex) {
       var chip = document.querySelector('[data-chip="' + ex + '"]');
       chip.textContent = done[ex] ? 'Done' : 'Not yet';
@@ -735,10 +770,21 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   // Done pop-up, shown over the home screen. After the vote that finishes all four,
   // closing it brings up the "Thank you, Billy" pop-up.
   var finale = false;
+  // msg: a string, or a list of strings and {text, href} links.
   function openDone(title, msg, left) {
     $('done-title').textContent = title;
-    $('done-msg').textContent = msg || '';
-    $('done-msg').hidden = !msg;
+    var m = $('done-msg');
+    m.textContent = '';
+    [].concat(msg || []).forEach(function (part) {
+      if (typeof part === 'string') { m.appendChild(document.createTextNode(part)); return; }
+      var a = document.createElement('a');
+      a.href = part.href;
+      a.textContent = part.text;
+      m.appendChild(a);
+    });
+    m.hidden = !m.firstChild;
+    $('when-pop').textContent = (comeBack() ? "Can't finish them all right now? Come back any time before October 18. " : '') + RESULTS_LINE;
+    $('when-pop').hidden = !(left && left.length);
     var box = $('still-open');
     box.textContent = '';
     if (left && left.length) {
@@ -763,7 +809,8 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     $('done-pop').hidden = true;
     if (byUser && finale) {
       finale = false;
-      openDone('Thank you, Billy', "You finished all four categories. Thanks for playing!");
+      openDone('Thank you, Billy', ['You finished all four categories. Hear the results on the October 19 episode, then review them on the ',
+        { text: 'results page', href: 'results.html' }, '.']);
     }
   }
   function showDone(ex, title, justVoted) {
