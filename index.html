@@ -125,7 +125,10 @@ main { flex: 1; padding-bottom: 24px; }
 .turnstile-box { min-height: 70px; margin: 8px 0; }
 .msg { min-height: 1.4em; color: var(--hot); font-weight: 600; }
 .confirm-actions { display: grid; gap: 10px; margin-top: 8px; }
-.still-open { margin: 16px 0; }
+.still-open { margin: 0 0 16px; color: var(--ink-2); }
+.still-open ul { margin: 6px 0 0; padding-left: 24px; }
+.still-open li { margin: 4px 0; font-size: 20px; }
+.pop-title { margin: 0 0 14px; font-size: 26px; line-height: 1.15; font-weight: 800; color: var(--brand-text); }
 
 /* Pop-up message in the middle of the screen. Tap outside it (or a button) to close. */
 .pop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(2, 10, 14, .72); }
@@ -167,15 +170,15 @@ main { flex: 1; padding-bottom: 24px; }
         <span class="card-sub">Just one. The best of the bunch.</span>
         <span class="chip" data-chip="number1">Not yet</span>
       </a>
-      <a class="card" href="#rearrange">
-        <span class="card-title">Redo the Countdown</span>
-        <span class="card-sub">Start with Greg's order and fix what he got wrong.</span>
-        <span class="chip" data-chip="rearrange">Not yet</span>
-      </a>
       <a class="card" href="#omissions">
         <span class="card-title">Biggest Omissions</span>
         <span class="card-sub">The great ones Greg left off. Name up to 5.</span>
         <span class="chip" data-chip="omissions">Not yet</span>
+      </a>
+      <a class="card" href="#rearrange">
+        <span class="card-title">Redo the Countdown</span>
+        <span class="card-sub">Start with Greg's order and fix what he got wrong.</span>
+        <span class="chip" data-chip="rearrange">Not yet</span>
       </a>
     </div>
     <p class="results-link">Results go up on the <a href="results.html">results page</a> once we've crunched the numbers.</p>
@@ -261,14 +264,19 @@ main { flex: 1; padding-bottom: 24px; }
     </div>
   </section>
 
-  <!-- DONE -->
-  <section id="view-done" class="view" hidden>
-    <h2 id="done-title">You're in.</h2>
-    <p id="done-msg">Thanks for playing.</p>
-    <div class="still-open" id="still-open"></div>
-    <a class="btn primary" href="#">Back to home</a>
-  </section>
 </main>
+
+<!-- Pop-up after a vote is locked in (shown over the home screen) -->
+<div id="done-pop" class="pop" role="dialog" aria-modal="true" aria-labelledby="done-title" hidden>
+  <div class="pop-box">
+    <p id="done-title" class="pop-title"></p>
+    <p id="done-msg" class="pop-msg" hidden></p>
+    <div class="still-open" id="still-open"></div>
+    <div class="pop-actions">
+      <button type="button" class="btn primary" id="done-home">Back to home</button>
+    </div>
+  </div>
+</div>
 
 <div id="pop" class="pop" role="dialog" aria-modal="true" aria-labelledby="pop-msg" hidden>
   <div class="pop-box">
@@ -296,10 +304,10 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   'use strict';
   var API = API_BASE.replace(/\/+$/, '');
   var EX = {
-    top10: { name: 'Your Top 10', short: 'Top 10' },
-    number1: { name: 'Your Number 1', short: 'Number 1' },
-    rearrange: { name: 'Redo the Countdown', short: 'Redo the Countdown' },
-    omissions: { name: 'Biggest Omissions', short: 'Biggest Omissions' }
+    top10: { name: 'Your Top 10', short: 'Top 10', thanks: "Votin' It" },
+    number1: { name: 'Your Number 1', short: 'Number 1', thanks: "Very good! You've successfully submitted your favorite of Greg's Catchphrases" },
+    omissions: { name: 'Biggest Omissions', short: 'Biggest Omissions', thanks: 'Good on ya! Thanks for telling Greg where he got it wrong.' },
+    rearrange: { name: 'Redo the Countdown', short: 'Redo the Countdown', thanks: 'You may be right! Greg always said to make your own list if you have a complaint about his.' }
   };
   var OM_BOXES = 5;
   var DRAFT_KEY = 'gcs75-draft-v1';
@@ -547,6 +555,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
       buildSortList(gregOrder());
       saveDraft();
     });
+    var desktop = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
     function attach() {
       if (!window.Sortable) return false;
       window.Sortable.create($('list-rearrange'), {
@@ -554,6 +563,11 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
         animation: 150,
         scroll: true,
         bubbleScroll: true,
+        // Desktop drag uses the browser's own drag-and-drop, which won't scroll the page on its own.
+        // Sortable's scroller does it instead; a bigger edge zone clears the sticky bar. Touch is unchanged.
+        forceAutoScrollFallback: true,
+        scrollSensitivity: desktop ? 110 : 30,
+        scrollSpeed: desktop ? 20 : 10,
         onEnd: function () { renumber(); saveDraft(); }
       });
       return true;
@@ -595,14 +609,15 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     var h = location.hash.replace(/^#/, '');
     var m;
     closePopup(false);
+    closeDone(false);
     removeTurnstile();
     if (EX[h]) {
-      if (done[h]) return showDone(h, 'Your ' + EX[h].short + ' is already in. Thanks!');
+      if (done[h]) return showDone(h, 'Your ' + EX[h].short + ' is already in. Thanks!', false);
       show(h);
       return;
     }
     if ((m = h.match(/^confirm-(\w+)$/)) && EX[m[1]]) {
-      if (done[m[1]]) return showDone(m[1], 'Your ' + EX[m[1]].short + ' is already in. Thanks!');
+      if (done[m[1]]) return showDone(m[1], 'Your ' + EX[m[1]].short + ' is already in. Thanks!', false);
       if (!ready(m[1])) { location.replace('#' + m[1]); return; }
       showConfirm(m[1]);
       return;
@@ -679,12 +694,12 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
       sending = false;
       if (res.status === 200 && res.body.ok) {
         markDone(ex);
-        showDone(ex, 'Your ' + EX[ex].short + ' is in. Thanks!');
+        showDone(ex, EX[ex].thanks, true);
         return;
       }
       if (res.status === 409) {
         markDone(ex);
-        showDone(ex, res.body.error || 'Looks like you already voted on this one.');
+        showDone(ex, res.body.error || 'Looks like you already voted on this one.', true);
         return;
       }
       failed(res.body.error || 'Voting is busy, try again later.');
@@ -717,27 +732,48 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     saveLocal(DRAFT_KEY, draft);
   }
 
-  function showDone(ex, text) {
-    removeTurnstile();
-    $('done-title').textContent = "You're in.";
-    $('done-msg').textContent = text;
-    var left = Object.keys(EX).filter(function (k) { return !done[k]; });
+  // Done pop-up, shown over the home screen. After the vote that finishes all four,
+  // closing it brings up the "Thank you, Billy" pop-up.
+  var finale = false;
+  function openDone(title, msg, left) {
+    $('done-title').textContent = title;
+    $('done-msg').textContent = msg || '';
+    $('done-msg').hidden = !msg;
     var box = $('still-open');
     box.textContent = '';
-    if (left.length) {
-      box.appendChild(document.createTextNode('Still open for you: '));
-      left.forEach(function (k, i) {
+    if (left && left.length) {
+      box.appendChild(document.createTextNode('Still open for you:'));
+      var ul = document.createElement('ul');
+      left.forEach(function (k) {
+        var li = document.createElement('li');
         var a = document.createElement('a');
         a.href = '#' + k;
         a.textContent = EX[k].name;
-        box.appendChild(a);
-        if (i < left.length - 1) box.appendChild(document.createTextNode(', '));
+        li.appendChild(a);
+        ul.appendChild(li);
       });
-    } else {
-      box.textContent = "You did all four. You're a legend.";
+      box.appendChild(ul);
     }
-    if (location.hash !== '#done') history.replaceState(null, '', '#done');
-    show('done');
+    box.hidden = !box.firstChild;
+    $('done-pop').hidden = false;
+    $('done-home').focus();
+  }
+  function closeDone(byUser) {
+    if ($('done-pop').hidden) return;
+    $('done-pop').hidden = true;
+    if (byUser && finale) {
+      finale = false;
+      openDone('Thank you, Billy', "You finished all four categories. Thanks for playing!");
+    }
+  }
+  function showDone(ex, title, justVoted) {
+    removeTurnstile();
+    var left = Object.keys(EX).filter(function (k) { return !done[k]; });
+    finale = !!justVoted && !left.length;
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    paintChips();
+    show('home');
+    openDone(title, '', left);
   }
 
   // ---------- boot ----------
@@ -779,7 +815,9 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
       $('pop-ok').addEventListener('click', function () { closePopup(true); });
       $('pop-no').addEventListener('click', function () { closePopup(false); });
       $('pop').addEventListener('click', function (e) { if (e.target === $('pop')) closePopup(false); });
-      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePopup(false); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closePopup(false); closeDone(true); } });
+      $('done-home').addEventListener('click', function () { closeDone(true); });
+      $('done-pop').addEventListener('click', function (e) { if (e.target === $('done-pop')) closeDone(true); });
       $('review-number1').addEventListener('click', function () { location.hash = '#confirm-number1'; });
       $('review-rearrange').addEventListener('click', function () { location.hash = '#confirm-rearrange'; });
       $('review-omissions').addEventListener('click', function () { location.hash = '#confirm-omissions'; });
