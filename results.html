@@ -41,6 +41,14 @@ a { color: var(--brand-text); }
 .kicker { margin: 0; color: var(--hot); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 15px; }
 h1 { margin: 4px 0 6px; font-size: 34px; line-height: 1.02; font-weight: 800; text-transform: uppercase; }
 h1 .accent { color: var(--brand-text); display: block; }
+/* Show website + social icons, under the title, above the orange line */
+.show-links { display: flex; align-items: center; gap: 14px; margin: 2px 0 2px; }
+.show-site { color: #ffffff; font-size: 20px; font-weight: 600; text-decoration: none; margin-right: 4px; }
+.show-site:hover, .show-site:focus-visible { text-decoration: underline; }
+.social { display: inline-flex; color: #ffffff; padding: 4px; }
+.social svg { width: 24px; height: 24px; fill: currentColor; }
+.social svg.ig { fill: none; }
+.social:hover, .social:focus-visible { color: var(--brand-text); }
 h2 { font-size: 28px; margin: 28px 0 4px; text-transform: uppercase; font-weight: 800; color: var(--brand-text); }
 .sub { color: var(--ink-3); margin: 0 0 10px; }
 main { flex: 1; padding-bottom: 24px; }
@@ -71,6 +79,19 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
   <div class="wrap">
     <p class="kicker">The Greg Cote Show</p>
     <h1>Greg Cote's Top 75 Catchphrase Countdown: <span class="accent">The Fans Have Spoken</span></h1>
+    <div class="show-links">
+      <a class="show-site" href="https://thegregcoteshow.com" target="_blank" rel="noopener">thegregcoteshow.com</a>
+      <a class="social" href="https://www.youtube.com/@thegregcoteshow" target="_blank" rel="noopener" aria-label="YouTube @thegregcoteshow" title="YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 7.2c.2-1.6 1.4-2.7 3-2.8C7.6 4.2 9.8 4.1 12 4.1s4.4.1 6.5.3c1.6.1 2.8 1.2 3 2.8.2 1.6.3 3.2.3 4.8s-.1 3.2-.3 4.8c-.2 1.6-1.4 2.7-3 2.8-2.1.2-4.3.3-6.5.3s-4.4-.1-6.5-.3c-1.6-.1-2.8-1.2-3-2.8C2.3 15.2 2.2 13.6 2.2 12s.1-3.2.3-4.8zM10 8.6v6.8l5.8-3.4z"/></svg>
+      </a>
+      <a class="social" href="https://twitter.com/thegregcoteshow" target="_blank" rel="noopener" aria-label="Twitter @thegregcoteshow" title="Twitter">
+        <!-- Twitter bird: Font Awesome Free 5 "twitter" icon, CC BY 4.0, fontawesome.com/license/free -->
+        <svg viewBox="0 0 512 512" aria-hidden="true"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+      </a>
+      <a class="social" href="https://www.instagram.com/thegregcoteshow" target="_blank" rel="noopener" aria-label="Instagram @thegregcoteshow" title="Instagram">
+        <svg class="ig" viewBox="0 0 24 24" aria-hidden="true" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>
+      </a>
+    </div>
   </div>
 </header>
 
@@ -96,6 +117,12 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
       <ol class="list" id="list-number1"></ol>
     </section>
 
+    <section id="sec-omissions" hidden>
+      <h2>The Biggest Omissions</h2>
+      <p class="sub">The catchphrases fans say Greg left off, by share of fans who named them.</p>
+      <ol class="list" id="list-omissions"></ol>
+    </section>
+
     <section id="sec-rearrange" hidden>
       <h2>The Fans' Countdown</h2>
       <p class="sub">All 75, ranked by where fans put them on average. The arrow shows how far it moved from Greg's spot.</p>
@@ -104,12 +131,6 @@ footer { border-top: 1px solid var(--line); color: var(--ink-3); font-size: 16px
         <summary>Show all 75</summary>
         <ol class="list" id="list-rearrange-rest"></ol>
       </details>
-    </section>
-
-    <section id="sec-omissions" hidden>
-      <h2>The Biggest Omissions</h2>
-      <p class="sub">The catchphrases fans say Greg left off, by share of fans who named them.</p>
-      <ol class="list" id="list-omissions"></ol>
     </section>
 
     <p class="fine" id="fine"></p>
@@ -205,8 +226,8 @@ const API_BASE = "https://catchphrase-vote.yeti-f3c.workers.dev";
     var parts = [];
     if (t.top10) parts.push(t.top10 + ' Top 10 ballots');
     if (t.number1) parts.push(t.number1 + ' Number 1 votes');
-    if (t.rearrange) parts.push(t.rearrange + ' full countdowns');
     if (t.omissions) parts.push(t.omissions + ' omission lists');
+    if (t.rearrange) parts.push(t.rearrange + ' full countdowns');
     var when = createdAt ? new Date(createdAt) : null;
     $('fine').textContent = 'Based on ' + parts.join(', ') + '.' + (when && !isNaN(when) ? ' Counted ' + when.toLocaleDateString() + '.' : '');
     $('soon').hidden = true;
@@ -237,7 +258,7 @@ const API_BASE = "https://catchphrase-vote.yeti-f3c.workers.dev";
     .then(function (out) {
       var res = out[1];
       if (res && res.public && res.snapshot) render(res.snapshot, res.created_at);
-      else soon('Results coming soon', "Voting's still going. Get yours in, then check back.");
+      else soon('Results coming soon', "Voting's still going. Get yours in, then hear the results on the October 19 episode and check back here.");
     })
     .catch(function () { soon('Results coming soon', "Couldn't load right now. Try again in a bit."); });
 })();
