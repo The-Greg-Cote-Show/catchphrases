@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS submissions (
   payload     TEXT    NOT NULL,             -- JSON array: catchphrase ids, or for omissions the typed answers
   created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   country     TEXT,
+  region      TEXT,                         -- Cloudflare's guess from the connection (state/province), Oct 5
+  city        TEXT,                         -- same, city
   UNIQUE (device_hash, exercise)            -- one vote per device per exercise; also indexes the status lookup
 );
 

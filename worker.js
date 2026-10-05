@@ -1,7 +1,7 @@
 // Greg Cote's Top 75 Catchphrase Countdown: Worker
 // Thin "Bird Feeder" API: validate, hash the IP, verify Turnstile, store one row.
 // All analysis happens in the admin dashboard's browser, never here.
-// Secrets (Cloudflare secrets only): ADMIN_KEY, IP_SALT, TURNSTILE_SECRET
+// Secrets (Cloudflare secrets only): ADMIN_KEY, IP_SALT, TURNSTILE_SECRET, VIEW_KEY (Greg's read-only dashboard)
 // Vars (wrangler.toml): ALLOWED_ORIGINS, SITE_URL, MAX_PER_CONNECTION
 //
 // Vote limits: one vote per device per exercise (random device id kept in the browser),
@@ -47,6 +47,7 @@ async function route(request, env) {
   const path = url.pathname.replace(/\/+$/, '') || '/';
   if (path.startsWith('/api/')) return publicApi(request, env, url, path);
   if (path === '/admin' || path.startsWith('/admin/')) return adminApi(request, env, url, path);
+  if (path === '/view' || path.startsWith('/view/')) return viewApi(request, env, url, path);
   return new Response('Not found', { status: 404 });
 }
 
@@ -140,16 +141,20 @@ async function handleSubmit(request, env, cors) {
   const ipHash = await hashIp(request, env);
   const devHash = await hashDevice(request, env, device);
   const cap = Math.max(1, parseInt(env.MAX_PER_CONNECTION, 10) || DEFAULT_PER_CONNECTION);
-  const country = request.cf && request.cf.country ? String(request.cf.country).slice(0, 2) : null;
+  // Cloudflare's location guess for the connection (free on every plan). Never the IP itself.
+  const cf = request.cf || {};
+  const country = cf.country ? String(cf.country).slice(0, 2) : null;
+  const region = cf.region ? String(cf.region).slice(0, 80) : null;
+  const city = cf.city ? String(cf.city).slice(0, 80) : null;
   try {
     // One statement: insert only if this connection is under its cap, and never twice per device.
     const res = await env.DB.prepare(
-      'INSERT INTO submissions (exercise, ip_hash, device_hash, payload, country) ' +
-        'SELECT ?1, ?2, ?3, ?4, ?5 ' +
+      'INSERT INTO submissions (exercise, ip_hash, device_hash, payload, country, region, city) ' +
+        'SELECT ?1, ?2, ?3, ?4, ?5, ?7, ?8 ' +
         'WHERE (SELECT COUNT(*) FROM submissions WHERE ip_hash = ?2 AND exercise = ?1) < ?6 ' +
         'ON CONFLICT (device_hash, exercise) DO NOTHING'
     )
-      .bind(exercise, ipHash, devHash, JSON.stringify(payload), country, cap)
+      .bind(exercise, ipHash, devHash, JSON.stringify(payload), country, cap, region, city)
       .run();
     if (!res.meta || !res.meta.changes) {
       const dup = await env.DB.prepare('SELECT 1 AS x FROM submissions WHERE device_hash = ? AND exercise = ?')
@@ -256,6 +261,31 @@ async function adminApi(request, env, url, path) {
   return json({ ok: false, error: 'Not found.' }, 404, ADMIN_HEADERS);
 }
 
+// Greg's read-only dashboard. Its own key (VIEW_KEY) so the admin key never gets shared;
+// the admin key opens it too. Reads only: the page, the rows (without ip_hash) and the saved
+// omissions review. The VIEW_KEY does not open any /admin route.
+async function viewApi(request, env, url, path) {
+  const key = url.searchParams.get('key') || '';
+  const ok =
+    (env.VIEW_KEY && (await keyMatches(key, env.VIEW_KEY))) || (env.ADMIN_KEY && (await keyMatches(key, env.ADMIN_KEY)));
+  if (!ok) return new Response('Wrong or missing key.', { status: 401, headers: ADMIN_HEADERS });
+  if (request.method !== 'GET') return json({ ok: false, error: 'Not found.' }, 404, ADMIN_HEADERS);
+  try {
+    if (path === '/view') return adminPage(key, env, true);
+    if (path === '/view/api/rows') {
+      const { after, limit } = pageParams(url, 1000, 2000);
+      const { results, next } = await fetchRows(env, after, limit);
+      const rows = results.map(({ ip_hash, ...rest }) => rest);
+      return json({ ok: true, rows, next }, 200, ADMIN_HEADERS);
+    }
+    if (path === '/view/api/review') return adminReviewGet(env);
+  } catch (err) {
+    console.error('view error:', err && err.message);
+    return json({ ok: false, error: 'Database error.' }, 503, ADMIN_HEADERS);
+  }
+  return json({ ok: false, error: 'Not found.' }, 404, ADMIN_HEADERS);
+}
+
 async function keyMatches(given, expected) {
   if (!given) return false;
   const [a, b] = await Promise.all([sha256(given), sha256(expected)]);
@@ -279,7 +309,7 @@ function pageParams(url, def, max) {
 
 async function fetchRows(env, after, limit) {
   const { results } = await env.DB.prepare(
-    'SELECT id, exercise, ip_hash, device_hash, payload, created_at, country FROM submissions WHERE id > ? ORDER BY id LIMIT ?'
+    'SELECT id, exercise, ip_hash, device_hash, payload, created_at, country, region, city FROM submissions WHERE id > ? ORDER BY id LIMIT ?'
   )
     .bind(after, limit)
     .all();
@@ -296,10 +326,12 @@ async function adminRows(env, url) {
 async function adminCsv(env, url) {
   const { after, limit } = pageParams(url, 5000, 5000);
   const { results, next } = await fetchRows(env, after, limit);
-  const lines = after === 0 ? ['id,exercise,created_at,country,ip_hash,device_hash,payload'] : [];
+  const lines = after === 0 ? ['id,exercise,created_at,country,region,city,ip_hash,device_hash,payload'] : [];
   for (const r of results) {
     lines.push(
-      [r.id, r.exercise, r.created_at, r.country || '', r.ip_hash, r.device_hash, r.payload].map(csvField).join(',')
+      [r.id, r.exercise, r.created_at, r.country || '', r.region || '', r.city || '', r.ip_hash, r.device_hash, r.payload]
+        .map(csvField)
+        .join(',')
     );
   }
   const headers = {
@@ -435,9 +467,22 @@ async function adminPreview(env) {
   return new Response(html, { status: 200, headers: { ...ADMIN_HEADERS, 'Content-Type': 'text/html; charset=utf-8' } });
 }
 
-function adminPage(key, env) {
-  const config = safeJson({ key, siteUrl: String(env.SITE_URL || '').replace(/\/+$/, '') });
-  return new Response(ADMIN_HTML.replace('__ADMIN_CONFIG__', () => config), {
+// The admin page doubles as Greg's viewer: same analysis, controls hidden, read-only API base.
+function adminPage(key, env, viewer = false) {
+  const config = safeJson({
+    key,
+    siteUrl: String(env.SITE_URL || '').replace(/\/+$/, ''),
+    base: viewer ? '/view' : '/admin',
+    viewer,
+  });
+  let html = ADMIN_HTML.replace('__ADMIN_CONFIG__', () => config);
+  if (viewer) {
+    html = html
+      .replace('<title>Catchphrase Admin</title>', '<title>Catchphrase Countdown Results</title>')
+      .replace('<h1>Catchphrase Countdown Admin</h1>', '<h1>Catchphrase Countdown: Fan Votes</h1>')
+      .replace('<body>', '<body class="viewer">');
+  }
+  return new Response(html, {
     status: 200,
     headers: { ...ADMIN_HEADERS, 'Content-Type': 'text/html; charset=utf-8' },
   });
@@ -669,17 +714,24 @@ ol { padding-left: 22px; margin: 4px 0; }
 .jump { margin: 4px 0 0; }
 .jump a { color: var(--brand); font-weight: 700; text-decoration: none; }
 .jump a:hover { text-decoration: underline; }
+.people { font-size: 24px; font-weight: 700; color: var(--brand); margin: 16px 0 2px; }
+.grid3 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 900px) { .grid3 { grid-template-columns: 1fr 1fr 1fr; } }
+.tablewrap.scroll { max-height: 420px; overflow-y: auto; }
+.viewer-only { display: none; }
+body.viewer .viewer-only { display: block; }
+body.viewer .admin-only { display: none !important; }
 </style>
 </head>
 <body>
 <header>
   <h1>Catchphrase Countdown Admin</h1>
-  <div class="flags">
+  <div class="flags admin-only">
     <div class="flag" id="flagVoting">Voting: ...</div>
     <div class="flag" id="flagResults">Results: ...</div>
   </div>
-  <div class="snapinfo" id="snapInfo"></div>
-  <div class="actions">
+  <div class="snapinfo admin-only" id="snapInfo"></div>
+  <div class="actions admin-only">
     <button id="btnVoting">Open voting</button>
     <button id="btnSnapshot" class="primary">Save snapshot</button>
     <a id="lnkPreview" class="btn" target="_blank" rel="noreferrer">Preview public page</a>
@@ -690,15 +742,25 @@ ol { padding-left: 22px; margin: 4px 0; }
     <button id="btnClear" class="danger">Clear all votes</button>
   </div>
   <p id="msg" role="status"></p>
-  <p class="jump"><a href="#omissions-review">Jump to Biggest Omissions review &darr;</a></p>
+  <p class="jump admin-only"><a href="#omissions-review">Jump to Biggest Omissions review &darr;</a></p>
 </header>
 <main>
   <section>
-    <h2>Submissions</h2>
+    <h2>Total Submissions: <span id="totalSubs">0</span></h2>
     <div class="tiles" id="tiles"></div>
-    <div class="grid2">
-      <div><h3>Per day (UTC)</h3><div class="chartbox"><canvas id="chDays" aria-label="Submissions per day"></canvas></div></div>
-      <div><h3>Top countries</h3><div class="tablewrap"><table id="tblCountries"></table></div></div>
+    <p class="people">People Who Voted: <span id="totalPeople">0</span></p>
+    <p class="note">Each person counts once, whether they voted in one category or all four, even if they came back days later to finish. Counted by device, so one person voting on both a phone and a laptop counts twice.</p>
+    <h3>Submissions per day (UTC)</h3>
+    <div class="chartbox"><canvas id="chDays" aria-label="Submissions per day"></canvas></div>
+  </section>
+
+  <section>
+    <h2>Where People Voted From</h2>
+    <p class="note">Counted per person, from where they cast their first vote. This is Cloudflare's best guess from the internet connection, so cities can be off (phones often show up in a nearby city). The first 128 votes (before the evening of October 5) only have the country.</p>
+    <div class="grid3">
+      <div><h3>Countries</h3><div class="tablewrap scroll"><table id="tblCountries"></table></div></div>
+      <div><h3>States / regions</h3><div class="tablewrap scroll"><table id="tblRegions"></table></div></div>
+      <div><h3>Cities</h3><div class="tablewrap scroll"><table id="tblCities"></table></div></div>
     </div>
   </section>
 
@@ -728,27 +790,30 @@ ol { padding-left: 22px; margin: 4px 0; }
 
   <section id="omissions-review">
     <h2>Biggest Omissions</h2>
-    <p class="note">Fans type these themselves, so the same phrase shows up spelled a dozen ways. Answers that only differ by capitals, spacing, punctuation or stretched letters ("nowwww") are grouped automatically. Then you finish the job here: look at <b>Possible matches</b>, merge what's the same, fix group names the way you want them shown, exclude junk, and click <b>Save review</b>. Snapshots and the public results use this review.</p>
-    <div class="actions">
+    <p class="note viewer-only">Catchphrases fans say Greg left off. Fans type these themselves, so similar answers are grouped together.</p>
+    <p class="note admin-only">Fans type these themselves, so the same phrase shows up spelled a dozen ways. Answers that only differ by capitals, spacing, punctuation or stretched letters ("nowwww") are grouped automatically. Then you finish the job here: look at <b>Possible matches</b>, merge what's the same, fix group names the way you want them shown, exclude junk, and click <b>Save review</b>. Snapshots and the public results use this review.</p>
+    <div class="actions admin-only">
       <button id="btnSaveReview" class="primary">Save review</button>
       <span id="reviewInfo" class="saveinfo"></span>
     </div>
-    <h3>Possible matches <span class="note" id="suggCount"></span></h3>
-    <div id="omSuggest"></div>
-    <h3>Groups</h3>
-    <div class="actions">
+    <h3 class="admin-only">Possible matches <span class="note" id="suggCount"></span></h3>
+    <div id="omSuggest" class="admin-only"></div>
+    <h3 class="admin-only">Groups</h3>
+    <div class="actions admin-only">
       <button id="btnMerge">Merge checked</button>
       <span class="note" style="align-self:center">Merges every checked group into the biggest checked one. Rename it after if you like.</span>
     </div>
     <div class="tablewrap"><table id="tblOm"></table></div>
-    <h3>Excluded</h3>
-    <div id="omExcluded" class="note"></div>
+    <h3 class="admin-only">Excluded</h3>
+    <div id="omExcluded" class="note admin-only"></div>
   </section>
 </main>
 
 <script>
 var CFG = __ADMIN_CONFIG__;
 var K = encodeURIComponent(CFG.key);
+var BASE = CFG.base || '/admin';   // '/view' on Greg's read-only page
+var VIEWER = !!CFG.viewer;
 var TEXT = {};
 var STATE = null;
 var ROWS = [];
@@ -795,7 +860,7 @@ async function loadRows() {
   ROWS = [];
   var after = 0;
   for (;;) {
-    var d = await getJson('/admin/api/rows?limit=2000&after=' + after);
+    var d = await getJson(BASE + '/api/rows?limit=2000&after=' + after);
     ROWS = ROWS.concat(d.rows);
     say('Loaded ' + ROWS.length + ' submissions...');
     if (d.next === null || d.next === undefined) break;
@@ -819,16 +884,25 @@ function renderFlags() {
 
 // ---- analysis: everything is computed here in the browser ----
 function compute() {
-  var by = { top10: [], number1: [], rearrange: [], omissions: [] }, days = {}, countries = {};
+  var by = { top10: [], number1: [], rearrange: [], omissions: [] }, days = {}, people = {}, nPeople = 0;
   ROWS.forEach(function (r) {
+    // One person = one device, however many categories it voted in. Rows come in id order,
+    // so the first row seen for a device is its first vote (used for location).
+    if (r.device_hash && !people[r.device_hash]) { people[r.device_hash] = r; nPeople++; }
     var p;
     try { p = JSON.parse(r.payload); } catch (e) { return; }
     if (!by[r.exercise] || !Array.isArray(p)) return;
     by[r.exercise].push(p);
     var d = String(r.created_at || '').slice(0, 10) || '?';
     days[d] = (days[d] || 0) + 1;
-    var c = r.country || '??';
-    countries[c] = (countries[c] || 0) + 1;
+  });
+  var geo = { countries: {}, regions: {}, cities: {} };
+  function bump(o, k) { o[k] = (o[k] || 0) + 1; }
+  Object.keys(people).forEach(function (dev) {
+    var r = people[dev], c = r.country || '', st = r.region || '', ci = r.city || '';
+    bump(geo.countries, c ? countryName(c) : 'Unknown');
+    bump(geo.regions, st ? st + ', ' + (c || '?') : 'Unknown');
+    bump(geo.cities, ci ? ci + (st ? ', ' + st : '') + ', ' + (c || '?') : 'Unknown');
   });
   var ids = [];
   for (var i = 75; i >= 1; i--) ids.push(i);
@@ -880,9 +954,26 @@ function compute() {
       omissions: OM.groups.slice(0, 20).map(function (g) { return { label: g.label, count: g.voters, pct: pct(g.voters, OM.voters) }; })
     },
     days: days,
-    countries: countries,
+    geo: geo,
+    people: nPeople,
     total: ROWS.length
   };
+}
+
+var REGION_NAMES = null;
+try { REGION_NAMES = new Intl.DisplayNames(['en'], { type: 'region' }); } catch (e) {}
+function countryName(code) {
+  try { return REGION_NAMES ? REGION_NAMES.of(code) : code; } catch (e) { return code; }
+}
+
+// Location table: biggest first, Unknown always last.
+function geoTable(id, label, counts, total) {
+  var keys = Object.keys(counts).sort(function (a, b) {
+    if ((a === 'Unknown') !== (b === 'Unknown')) return a === 'Unknown' ? 1 : -1;
+    return counts[b] - counts[a] || (a < b ? -1 : 1);
+  });
+  table(id, [{ t: label }, { t: 'People', num: 1 }, { t: '% of people', num: 1 }],
+    keys.map(function (k) { return [k, counts[k], pct(counts[k], total) + '%']; }));
 }
 
 function barChart(id, labels, data, horizontal, fmt) {
@@ -919,14 +1010,16 @@ function table(id, head, rows) {
 
 function render() {
   var R = compute(), S = R.snapshot, T = S.totals;
-  $('tiles').innerHTML = [['Top 10', T.top10], ['Number 1', T.number1], ['Rearrange', T.rearrange], ['Omissions', T.omissions], ['All', R.total]]
+  $('totalSubs').textContent = R.total;
+  $('totalPeople').textContent = R.people;
+  $('tiles').innerHTML = [['Top 10', T.top10], ['Number 1', T.number1], ['Rearrange', T.rearrange], ['Omissions', T.omissions]]
     .map(function (x) { return '<div class="tile"><div class="n">' + x[1] + '</div><div class="l">' + esc(x[0]) + '</div></div>'; }).join('');
 
   var dayKeys = Object.keys(R.days).sort();
   barChart('chDays', dayKeys, dayKeys.map(function (d) { return R.days[d]; }), false);
-  var cKeys = Object.keys(R.countries).sort(function (a, b) { return R.countries[b] - R.countries[a]; }).slice(0, 15);
-  table('tblCountries', [{ t: 'Country' }, { t: 'Submissions', num: 1 }, { t: '% of all', num: 1 }],
-    cKeys.map(function (c) { return [c, R.countries[c], pct(R.countries[c], R.total) + '%']; }));
+  geoTable('tblCountries', 'Country', R.geo.countries, R.people);
+  geoTable('tblRegions', 'State / region', R.geo.regions, R.people);
+  geoTable('tblCities', 'City', R.geo.cities, R.people);
 
   var t20 = S.top10.slice(0, 20);
   barChart('chTop10', t20.map(function (x) { return short(x.id); }), t20.map(function (x) { return x.pct; }), true,
@@ -1075,14 +1168,30 @@ function omSuggestions() {
   return out.slice(0, 50);
 }
 
+function omVariants(g, max) {
+  var variants = [];
+  g.keys.forEach(function (k) { var raws = OM.keys[k].raws; Object.keys(raws).forEach(function (r) { variants.push({ r: r, n: raws[r] }); }); });
+  variants.sort(function (a, b) { return b.n - a.n; });
+  return variants.slice(0, max).map(function (v) { return esc(v.r) + ' (' + v.n + ')'; }).join(', ') + (variants.length > max ? ', +' + (variants.length - max) + ' more' : '');
+}
+
+// Greg's page: the groups as the saved review has them, read only. Excluded groups stay hidden.
+function renderOmissionsViewer() {
+  var h = '<thead><tr><th class="num"></th><th>Omission</th><th class="num">Voters</th><th class="num">% of omission voters</th><th>How fans typed it</th></tr></thead><tbody>';
+  OM.groups.forEach(function (g, i) {
+    h += '<tr><td class="num">' + (i + 1) + '</td><td>' + esc(g.label) + '</td><td class="num">' + g.voters + '</td><td class="num">' + pct(g.voters, OM.voters) + '%</td>' +
+      '<td class="variants">' + omVariants(g, 8) + '</td></tr>';
+  });
+  if (!OM.groups.length) h += '<tr><td colspan="5" class="note">No omission answers yet.</td></tr>';
+  $('tblOm').innerHTML = h + '</tbody>';
+}
+
 function renderOmissions() {
   if (!OM) return;
-  var h = '<thead><tr><th></th><th>Group name (what the public sees)</th><th class="num">Voters</th><th class="num">% of omission voters</th><th>Answers in this group</th><th></th><th></th></tr></thead><tbody>';
+  if (VIEWER) { renderOmissionsViewer(); return; }
+  var h ='<thead><tr><th></th><th>Group name (what the public sees)</th><th class="num">Voters</th><th class="num">% of omission voters</th><th>Answers in this group</th><th></th><th></th></tr></thead><tbody>';
   OM.groups.forEach(function (g, i) {
-    var variants = [];
-    g.keys.forEach(function (k) { var raws = OM.keys[k].raws; Object.keys(raws).forEach(function (r) { variants.push({ r: r, n: raws[r] }); }); });
-    variants.sort(function (a, b) { return b.n - a.n; });
-    var vtxt = variants.slice(0, 8).map(function (v) { return esc(v.r) + ' (' + v.n + ')'; }).join(', ') + (variants.length > 8 ? ', +' + (variants.length - 8) + ' more' : '');
+    var vtxt = omVariants(g, 8);
     var m = gregMatch(g.norm);
     var flags = (m ? '<span class="badge" title="' + esc("Looks like Greg's #" + m.id + ': ' + phrase(m.id)) + '">On Greg\'s list #' + m.id + '</span> ' : '') +
       (g.isNew && REVIEW_SAVED_AT ? '<span class="badge new">New</span>' : '');
@@ -1174,7 +1283,7 @@ $('btnMerge').onclick = function () {
 };
 
 async function loadReview() {
-  var d = await getJson('/admin/api/review');
+  var d = await getJson(BASE + '/api/review');
   var r = d.review || {};
   REVIEW = { map: r.map || {}, excluded: r.excluded || {}, dismissed: r.dismissed || {} };
   REVIEW_SAVED_AT = r.saved_at || null;
@@ -1196,7 +1305,7 @@ $('btnSaveReview').onclick = async function () {
 
 async function refresh() {
   try {
-    await loadState();
+    if (!VIEWER) await loadState();
     if (!REVIEW_DIRTY) await loadReview();
     await loadRows();
     render();
