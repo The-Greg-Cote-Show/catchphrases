@@ -59,6 +59,9 @@ h1 .accent { color: var(--brand-text); display: block; }
 .social:hover, .social:focus-visible { color: var(--brand-text); }
 .when { color: var(--ink-2); margin: -4px 0 16px; }
 .when-pop { margin: 0 0 16px; color: var(--ink-2); font-size: 18px; }
+/* Home when all four are done: thank-you banner in place of the intro */
+.all-done { margin: 16px 0; padding: 4px 16px 6px; background: var(--surface); border: 2px solid var(--brand); border-radius: var(--radius); }
+.all-done p { margin: 8px 0 12px; font-size: 21px; }
 h2 { font-size: 30px; line-height: 1.1; margin: 8px 0 4px; text-transform: uppercase; font-weight: 800; color: var(--brand-text); }
 .lede { font-size: 21px; color: var(--ink-2); margin: 16px 0; }
 .help { color: var(--ink-2); margin: 0 0 12px; }
@@ -181,8 +184,13 @@ main { flex: 1; padding-bottom: 24px; }
 <main class="wrap">
   <!-- HOME -->
   <section id="view-home" class="view">
-    <p class="lede">Greg counted down his Top 75. Now you get a say. Do one or do them all.</p>
+    <p class="lede" id="lede-home">Greg counted down his Top 75. Now you get a say. Do one or do them all.</p>
     <p class="when" id="when-home"></p>
+    <div class="all-done" id="all-done" hidden>
+      <h2>Thank you, Billy</h2>
+      <p>You finished all four categories. Hear the results on the October 19 episode, then review them on the <a href="results.html">results page</a>.</p>
+      <p>Nice chattin' with ya. Take the rest of the day off.</p>
+    </div>
     <div class="cards">
       <a class="card" href="#top10">
         <span class="card-title">Your Top 10</span>
@@ -614,6 +622,11 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
 
   function paintWhen() {
     $('when-home').textContent = (comeBack() ? "Can't finish right now? Come back and finish your voting any time before October 18. " : '') + RESULTS_LINE;
+    // All four done: thank-you banner replaces the intro and the date line
+    var all = Object.keys(EX).every(function (k) { return done[k]; });
+    $('all-done').hidden = !all;
+    $('lede-home').hidden = all;
+    $('when-home').hidden = all;
   }
 
   function paintChips() {
