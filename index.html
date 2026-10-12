@@ -62,6 +62,12 @@ h1 .accent { color: var(--brand-text); display: block; }
 /* Home when all four are done: thank-you banner in place of the intro */
 .all-done { margin: 16px 0; padding: 4px 16px 6px; background: var(--surface); border: 2px solid var(--brand); border-radius: var(--radius); }
 .all-done p { margin: 8px 0 12px; font-size: 21px; }
+/* Shirt promo above the home intro: flashes orange / white. Holds still for reduced-motion users. */
+.shirt-promo { margin: 18px 0 -6px; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; line-height: 1.15; }
+.shirt-promo a { color: var(--hot); text-decoration: underline; text-underline-offset: 3px; animation: shirt-flash 1.2s ease-in-out infinite; }
+.shirt-promo a:hover, .shirt-promo a:focus-visible { animation-play-state: paused; color: var(--ink); }
+@keyframes shirt-flash { 0%, 100% { color: var(--hot); } 50% { color: #ffffff; } }
+@media (prefers-reduced-motion: reduce) { .shirt-promo a { animation: none; } }
 h2 { font-size: 30px; line-height: 1.1; margin: 8px 0 4px; text-transform: uppercase; font-weight: 800; color: var(--brand-text); }
 .lede { font-size: 21px; color: var(--ink-2); margin: 16px 0; }
 .help { color: var(--ink-2); margin: 0 0 12px; }
@@ -184,6 +190,7 @@ main { flex: 1; padding-bottom: 24px; }
 <main class="wrap">
   <!-- HOME -->
   <section id="view-home" class="view">
+    <p class="shirt-promo"><a id="shirt-link" href="https://the-greg-cote-show.myspreadshop.com/greg+cote's+top+75+catchphrase+countdown?idea=6acc0e6edefbe8201dc62bf0" target="_blank" rel="noopener">Now available: Catchphrase Countdown Shirts!</a></p>
     <p class="lede" id="lede-home">Greg counted down his Top 75. Now you get a say. Do one or do them all.</p>
     <p class="when" id="when-home"></p>
     <div class="all-done" id="all-done" hidden>
