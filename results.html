@@ -258,7 +258,7 @@ const API_BASE = "https://catchphrase-vote.yeti-f3c.workers.dev";
     .then(function (out) {
       var res = out[1];
       if (res && res.public && res.snapshot) render(res.snapshot, res.created_at);
-      else soon('Results coming soon', "Voting's still going. Get yours in, then hear the results on the October 19 episode and check back here.");
+      else soon('Results coming soon', "Voting's still going. Get yours in, then hear the results on the October 26 episode and check back here.");
     })
     .catch(function () { soon('Results coming soon', "Couldn't load right now. Try again in a bit."); });
 })();

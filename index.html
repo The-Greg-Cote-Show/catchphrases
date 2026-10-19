@@ -195,7 +195,7 @@ main { flex: 1; padding-bottom: 24px; }
     <p class="when" id="when-home"></p>
     <div class="all-done" id="all-done" hidden>
       <h2>Thank you, Billy</h2>
-      <p>You finished all four categories. Hear the results on the October 19 episode, then review them on the <a href="results.html">results page</a>.</p>
+      <p>You finished all four categories. Hear the results on the October 26 episode, then review them on the <a href="results.html">results page</a>.</p>
       <p>Nice chattin' with ya. Take the rest of the day off.</p>
     </div>
     <div class="cards">
@@ -350,10 +350,10 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     rearrange: { name: 'Redo the Countdown', short: 'Redo the Countdown', thanks: 'You may be right! Greg always said to make your own list if you have a complaint about his.' }
   };
   var OM_BOXES = 5;
-  // Dates in the copy. "Come back before Oct 18" shows until midnight Oct 18 on the visitor's own clock.
+  // Dates in the copy. "Come back through Thursday, Oct 22" shows until midnight Oct 23 on the visitor's own clock.
   // Message only: voting still opens and closes from the admin switch.
-  var VOTE_BY = new Date(2026, 9, 18);
-  var RESULTS_LINE = 'Hear and review the results on October 19.';
+  var VOTE_BY = new Date(2026, 9, 23);
+  var RESULTS_LINE = 'Hear and review the results on October 26.';
   function comeBack() { return new Date() < VOTE_BY; }
   var DRAFT_KEY = 'gcs75-draft-v1';
   var DONE_KEY = 'gcs75-done-v1';
@@ -628,7 +628,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
   }
 
   function paintWhen() {
-    $('when-home').textContent = (comeBack() ? "Can't finish right now? Come back and finish your voting any time before October 18. " : '') + RESULTS_LINE;
+    $('when-home').textContent = (comeBack() ? "Can't finish right now? Come back and finish your voting any time through Thursday, October 22. " : '') + RESULTS_LINE;
     // All four done: thank-you banner replaces the intro and the date line
     var all = Object.keys(EX).every(function (k) { return done[k]; });
     $('all-done').hidden = !all;
@@ -803,7 +803,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
       m.appendChild(a);
     });
     m.hidden = !m.firstChild;
-    $('when-pop').textContent = (comeBack() ? "Can't finish them all right now? Come back any time before October 18. " : '') + RESULTS_LINE;
+    $('when-pop').textContent = (comeBack() ? "Can't finish them all right now? Come back any time through Thursday, October 22. " : '') + RESULTS_LINE;
     $('when-pop').hidden = !(left && left.length);
     var box = $('still-open');
     box.textContent = '';
@@ -829,7 +829,7 @@ window.onTurnstileReady = function () { if (window.App) window.App.turnstileRead
     $('done-pop').hidden = true;
     if (byUser && finale) {
       finale = false;
-      openDone('Thank you, Billy', ['You finished all four categories. Hear the results on the October 19 episode, then review them on the ',
+      openDone('Thank you, Billy', ['You finished all four categories. Hear the results on the October 26 episode, then review them on the ',
         { text: 'results page', href: 'results.html' }, '.']);
     }
   }
