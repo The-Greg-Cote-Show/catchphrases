@@ -850,19 +850,14 @@ body.viewer .admin-only { display: none !important; }
 <main id="viewReveal" hidden>
   <section>
     <h2>Reveal: Fans' Top 10</h2>
-    <p class="note"><b>On air, just read the "Read it" line.</b> Five a week, 25 down to 1.<br>
-    Every fan picked up to 10 favorites. The more fans who put a phrase in their 10, the higher it ranks.<br>
-    <b>% of voters</b> = out of all the fans who voted, how many picked it. 20% means about 1 in 5 fans. These add up to way more than 100% because every fan picked 10. That's normal.<br>
-    <b>% of all picks</b> = just for us. Skip it on air.<br>
-    No ties: if two got the same votes, the one Greg ranked higher gets the better spot.</p>
+    <p class="note">Fans picked up to 10 favorites. <b>% of voters</b> = how many fans picked it (20% = 1 in 5).<br>
+    Skip "% of all picks." Ties go to Greg's higher pick.</p>
     <div id="revTop10"></div>
   </section>
   <section>
     <h2>Reveal: Fans' Number 1</h2>
-    <p class="note"><b>On air, just read the "Read it" line.</b> Two a week, 10 down to 1.<br>
-    Every fan picked one phrase as their Number 1. The more fans who picked it, the higher it ranks.<br>
-    <b>% of votes</b> = out of all the Number 1 votes, how many went to this one. 10% means 1 in 10 fans picked it as their favorite.<br>
-    No ties: if two got the same votes, the one Greg ranked higher gets the better spot.</p>
+    <p class="note">Fans picked one favorite. <b>% of votes</b> = how many fans picked it (10% = 1 in 10).<br>
+    Ties go to Greg's higher pick.</p>
     <div id="revNum1"></div>
   </section>
 </main>
