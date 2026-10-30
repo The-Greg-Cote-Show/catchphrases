@@ -850,14 +850,14 @@ body.viewer .admin-only { display: none !important; }
 <main id="viewReveal" hidden>
   <section>
     <h2>Reveal: Fans' Top 10</h2>
-    <p class="note">Fans picked up to 10 favorites. <b>% of voters</b> = how many fans picked it (20% = 1 in 5).<br>
-    Skip "% of all picks." Ties go to Greg's higher pick.</p>
+    <p class="note">Fans picked their top 10 catchphrases, and these are the 25 that got the most votes.<br>
+    We're going five a week until we reveal the number 1 fan-voted catchphrase.</p>
     <div id="revTop10"></div>
   </section>
   <section>
     <h2>Reveal: Fans' Number 1</h2>
-    <p class="note">Fans picked one favorite. <b>% of votes</b> = how many fans picked it (10% = 1 in 10).<br>
-    Ties go to Greg's higher pick.</p>
+    <p class="note">Fans picked their favorite of all of Greg's Top 75 catchphrases, and these are the 10 that got the most votes.<br>
+    We'll reveal two a week until we get to the catchphrase the most fans picked as their number 1.</p>
     <div id="revNum1"></div>
   </section>
 </main>
