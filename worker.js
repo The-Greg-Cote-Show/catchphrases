@@ -851,7 +851,7 @@ body.viewer .admin-only { display: none !important; }
   <section>
     <h2>Reveal: Fans' Top 10</h2>
     <p class="note">Fans picked their top 10 catchphrases, and these are the 25 that got the most votes.<br>
-    We're going five a week until we reveal the number 1 fan-voted catchphrase.</p>
+    We'll reveal five a week until we reveal the number 1 fan-voted catchphrase.</p>
     <div id="revTop10"></div>
   </section>
   <section>
