@@ -738,6 +738,18 @@ ol { padding-left: 22px; margin: 4px 0; }
 .grid3 { display: grid; grid-template-columns: 1fr; gap: 16px; }
 @media (min-width: 900px) { .grid3 { grid-template-columns: 1fr 1fr 1fr; } }
 .tablewrap.scroll { max-height: 420px; overflow-y: auto; }
+/* Reveal tables on phones: each row stacks (rank + catchphrase, then the %s, then the full Read it line). */
+@media (max-width: 640px) {
+  table.reveal thead { display: none; }
+  table.reveal tr { display: block; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  table.reveal td { display: inline; border: 0; padding: 0 10px 0 0; }
+  table.reveal td.rk, table.reveal td.ph { font-weight: 700; }
+  table.reveal td.pc { color: var(--ink-3); font-size: 15px; }
+  table.reveal td.pc::before { content: attr(data-label) ": "; }
+  table.reveal td.ph { padding: 0; }
+  table.reveal td.ph::after { content: ""; display: block; }
+  table.reveal td.rd { display: block; margin-top: 4px; }
+}
 .viewer-only { display: none; }
 body.viewer .viewer-only { display: block; }
 body.viewer .admin-only { display: none !important; }
@@ -1120,11 +1132,11 @@ function revealWeeks(id, list, per, cols, line) {
   for (var w = 0; w < 5; w++) {
     var hi = per * 5 - w * per, lo = hi - per + 1;
     var rows = list.filter(function (x) { return x.rank >= lo && x.rank <= hi; }).reverse();
-    h += '<h3>Week ' + (w + 1) + ': ' + hi + ' to ' + lo + '</h3><div class="tablewrap"><table><thead><tr><th class="num">Rank</th><th>Catchphrase</th>' +
+    h += '<h3>Week ' + (w + 1) + ': ' + hi + ' to ' + lo + '</h3><div class="tablewrap"><table class="reveal"><thead><tr><th class="num">Rank</th><th>Catchphrase</th>' +
       cols.map(function (c) { return '<th class="num">' + esc(c.t) + '</th>'; }).join('') + '<th>Read it</th></tr></thead><tbody>';
     rows.forEach(function (x) {
-      h += '<tr><td class="num">' + x.rank + '</td><td>' + esc(phrase(x.id)) + '</td>' +
-        cols.map(function (c) { return '<td class="num">' + esc(c.v(x)) + '</td>'; }).join('') + '<td>' + esc(line(x)) + '</td></tr>';
+      h += '<tr><td class="num rk">' + x.rank + '</td><td class="ph">' + esc(phrase(x.id)) + '</td>' +
+        cols.map(function (c) { return '<td class="num pc" data-label="' + esc(c.t) + '">' + esc(c.v(x)) + '</td>'; }).join('') + '<td class="rd">' + esc(line(x)) + '</td></tr>';
     });
     h += '</tbody></table></div>';
   }
