@@ -850,12 +850,12 @@ body.viewer .admin-only { display: none !important; }
 <main id="viewReveal" hidden>
   <section>
     <h2>Reveal: Fans' Top 10</h2>
-    <p class="note">The fans' countdown from 25 to 1, five a week. Rank = how many Top 10 ballots it was on. "% of voters" = share of Top 10 voters who picked it (each fan picked up to 10, so these add up to way more than 100%). "% of all picks" = its share of every pick made (these add up to 100%). Tied = same number of picks.</p>
+    <p class="note">The fans' countdown from 25 to 1, five a week. Rank = how many Top 10 ballots it was on. "% of voters" = share of Top 10 voters who picked it (each fan picked up to 10, so these add up to way more than 100%). "% of all picks" = its share of every pick made (these add up to 100%). No ties: same number of picks goes to Greg's higher-ranked phrase.</p>
     <div id="revTop10"></div>
   </section>
   <section>
     <h2>Reveal: Fans' Number 1</h2>
-    <p class="note">One pick per fan, so "% of votes" = share of all Number 1 votes (these add up to 100%). Tied = same number of votes.</p>
+    <p class="note">The fans' top 10 from 10 to 1, two a week. One pick per fan, so "% of votes" = share of all Number 1 votes (these add up to 100%). No ties: same number of votes goes to Greg's higher-ranked phrase.</p>
     <div id="revNum1"></div>
   </section>
 </main>
@@ -1105,24 +1105,23 @@ function render() {
   return R;
 }
 
-// ---- Reveal tab: the fans' countdown, 25 to 1, five a week ----
-// Ties share a rank (two at 22 means the next one is 24). Only ranks 1 to 25 are shown.
-function revealRank(list) {
+// ---- Reveal tab: the fans' countdowns over 5 weeks (Top 10: 25 to 1, five a week; Number 1: 10 to 1, two a week) ----
+// No ties: lists come sorted by votes, then Greg's rank (id), so on a tie Greg's higher pick gets the better spot.
+function revealRank(list, top) {
   list = list.filter(function (x) { return x.count > 0; });
-  list.forEach(function (x, i) { x.rank = i && list[i - 1].count === x.count ? list[i - 1].rank : i + 1; });
-  list.forEach(function (x) { x.tied = list.filter(function (y) { return y.rank === x.rank; }).length > 1; });
-  return list.filter(function (x) { return x.rank <= 25; });
+  list.forEach(function (x, i) { x.rank = i + 1; });
+  return list.slice(0, top);
 }
-function revealWeeks(id, list, cols, line) {
+function revealWeeks(id, list, per, cols, line) {
   if (!list.length) { $(id).innerHTML = '<p class="note">No votes yet.</p>'; return; }
   var h = '';
   for (var w = 0; w < 5; w++) {
-    var hi = 25 - w * 5, lo = hi - 4;
+    var hi = per * 5 - w * per, lo = hi - per + 1;
     var rows = list.filter(function (x) { return x.rank >= lo && x.rank <= hi; }).reverse();
     h += '<h3>Week ' + (w + 1) + ': ' + hi + ' to ' + lo + '</h3><div class="tablewrap"><table><thead><tr><th class="num">Rank</th><th>Catchphrase</th>' +
       cols.map(function (c) { return '<th class="num">' + esc(c.t) + '</th>'; }).join('') + '<th>Read it</th></tr></thead><tbody>';
     rows.forEach(function (x) {
-      h += '<tr><td class="num">' + (x.tied ? 'T-' : '') + x.rank + '</td><td>' + esc(phrase(x.id)) + '</td>' +
+      h += '<tr><td class="num">' + x.rank + '</td><td>' + esc(phrase(x.id)) + '</td>' +
         cols.map(function (c) { return '<td class="num">' + esc(c.v(x)) + '</td>'; }).join('') + '<td>' + esc(line(x)) + '</td></tr>';
     });
     h += '</tbody></table></div>';
@@ -1132,23 +1131,12 @@ function revealWeeks(id, list, cols, line) {
 function renderReveal(S) {
   var picks = 0;
   S.top10.forEach(function (x) { picks += x.count; });
-  var t = revealRank(S.top10.map(function (x) { return { id: x.id, count: x.count, pct: x.pct, pp: pct(x.count, picks) }; }));
-  revealWeeks('revTop10', t, [{ t: '% of voters', v: function (x) { return x.pct + '%'; } }, { t: '% of all picks', v: function (x) { return x.pp + '%'; } }],
-    function (x) { return (x.tied ? 'Tied at number ' : 'At number ') + x.rank + ', picked by ' + x.pct + '% of voters: "' + phrase(x.id) + '"'; });
-  // S.number1 stops at 10, so count all the Number 1 votes again here.
-  var n1 = 0, c1 = {};
-  ROWS.forEach(function (r) {
-    if (r.exercise !== 'number1') return;
-    var p;
-    try { p = JSON.parse(r.payload); } catch (e) { return; }
-    if (!Array.isArray(p)) return;
-    n1++;
-    c1[p[0]] = (c1[p[0]] || 0) + 1;
-  });
-  var ones = Object.keys(c1).map(function (id) { return { id: Number(id), count: c1[id], pct: pct(c1[id], n1) }; })
-    .sort(function (a, b) { return b.count - a.count || a.id - b.id; });
-  revealWeeks('revNum1', revealRank(ones), [{ t: '% of votes', v: function (x) { return x.pct + '%'; } }],
-    function (x) { return (x.tied ? 'Tied at number ' : 'At number ') + x.rank + ', with ' + x.pct + '% of all votes: "' + phrase(x.id) + '"'; });
+  var t = revealRank(S.top10.map(function (x) { return { id: x.id, count: x.count, pct: x.pct, pp: pct(x.count, picks) }; }), 25);
+  revealWeeks('revTop10', t, 5, [{ t: '% of voters', v: function (x) { return x.pct + '%'; } }, { t: '% of all picks', v: function (x) { return x.pp + '%'; } }],
+    function (x) { return 'At number ' + x.rank + ', picked by ' + x.pct + '% of voters: "' + phrase(x.id) + '" ' + "(Greg's rank: " + x.id + ')'; });
+  var ones = revealRank(S.number1.map(function (x) { return { id: x.id, count: x.count, pct: x.pct }; }), 10);
+  revealWeeks('revNum1', ones, 2, [{ t: '% of votes', v: function (x) { return x.pct + '%'; } }],
+    function (x) { return 'At number ' + x.rank + ', with ' + x.pct + '% of all votes: "' + phrase(x.id) + '" ' + "(Greg's rank: " + x.id + ')'; });
 }
 
 // ---- Biggest Omissions: automatic grouping + your manual review (all in this browser) ----
