@@ -850,12 +850,19 @@ body.viewer .admin-only { display: none !important; }
 <main id="viewReveal" hidden>
   <section>
     <h2>Reveal: Fans' Top 10</h2>
-    <p class="note">The fans' countdown from 25 to 1, five a week. Rank = how many Top 10 ballots it was on. "% of voters" = share of Top 10 voters who picked it (each fan picked up to 10, so these add up to way more than 100%). "% of all picks" = its share of every pick made (these add up to 100%). No ties: same number of picks goes to Greg's higher-ranked phrase.</p>
+    <p class="note"><b>On air, just read the "Read it" line.</b> Five a week, 25 down to 1.<br>
+    Every fan picked up to 10 favorites. The more fans who put a phrase in their 10, the higher it ranks.<br>
+    <b>% of voters</b> = out of all the fans who voted, how many picked it. 20% means about 1 in 5 fans. These add up to way more than 100% because every fan picked 10. That's normal.<br>
+    <b>% of all picks</b> = just for us. Skip it on air.<br>
+    No ties: if two got the same votes, the one Greg ranked higher gets the better spot.</p>
     <div id="revTop10"></div>
   </section>
   <section>
     <h2>Reveal: Fans' Number 1</h2>
-    <p class="note">The fans' top 10 from 10 to 1, two a week. One pick per fan, so "% of votes" = share of all Number 1 votes (these add up to 100%). No ties: same number of votes goes to Greg's higher-ranked phrase.</p>
+    <p class="note"><b>On air, just read the "Read it" line.</b> Two a week, 10 down to 1.<br>
+    Every fan picked one phrase as their Number 1. The more fans who picked it, the higher it ranks.<br>
+    <b>% of votes</b> = out of all the Number 1 votes, how many went to this one. 10% means 1 in 10 fans picked it as their favorite.<br>
+    No ties: if two got the same votes, the one Greg ranked higher gets the better spot.</p>
     <div id="revNum1"></div>
   </section>
 </main>
